@@ -6,14 +6,21 @@
 //
 
 import UIKit
+import Pimeier
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+        // 注册 Native Bridge 模块
+        BridgeManager.shared.register(ToastModule.self)
+        BridgeManager.shared.register(DeviceModule.self)
+        
+        // 注册自定义 UI 组件
+        ComponentRegistry.shared.register(CircleView.self, forTagName: "circle")
+        
         return true
     }
 
@@ -33,4 +40,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 }
-

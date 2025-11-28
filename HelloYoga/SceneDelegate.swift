@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Pimeier
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -16,7 +17,40 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        
+        // 使用测试控制器代替 Storyboard
+        let window = UIWindow(windowScene: windowScene)
+        window.rootViewController = UINavigationController(rootViewController: TestViewController())  // 使用测试控制器并包裹在导航控制器中
+        window.makeKeyAndVisible()
+        self.window = window
+        
+        // 显示悬浮调试按钮
+        #if DEBUG
+        DebugTool.shared.showFloatingButton(in: window)
+        #endif
+        
+        // 配置热更新服务器 URL（需要根据实际情况配置）
+        // HotUpdateManager.shared.serverBaseURL = "https://your-server.com/hotupdate"
+        
+        // 检查本地开发服务器是否可用
+        #if DEBUG
+        LocalDevServer.shared.checkServerAvailable { available in
+            if available {
+                print("✅ 本地开发服务器可用: \(LocalDevServer.shared.baseURL)")
+            } else {
+                print("⚠️ 本地开发服务器不可用，请确保已启动本地服务器")
+                print("   启动方法: cd HelloYoga/HelloYoga && python3 -m http.server 8080")
+            }
+        }
+        #endif
+        
+        // 应用启动时检查更新
+        // UpdateChecker.shared.checkUpdateOnLaunch()
+        
+        // 启动定时检查（可选，默认 1 小时检查一次）
+        // UpdateChecker.shared.setCheckInterval(3600) // 1 小时
+        // UpdateChecker.shared.startPeriodicCheck()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -49,4 +83,3 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
 
 }
-

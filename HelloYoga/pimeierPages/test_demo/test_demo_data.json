@@ -1,0 +1,23 @@
+{
+  "navTitle": "",
+  "welcomeTitle": "欢迎使用sdfa ! 🎉",
+  "welcomeSubtitle": "这是一个完整的测试页面，展示了 XML 布局引擎的各种功能：Flexbox 布局、嵌套结构、丰富的样式属性和数据绑定。",
+  
+  "stat1Value": "128",
+  "stat1Label": "总访问量",
+  
+  "stat2Value": "42",
+  "stat2Label": "活跃用户",
+  
+  "feature1": "📊\n数据分析",
+  "feature2": "📱\n我的设备",
+  "feature3": "⚙️\n系统设置",
+  "feature4": "📝\n待办事项",
+  "feature5": "💬\n消息中心",
+  "feature6": "👤\n个人中心",
+  
+  "primaryAction": "开始使用 Yoga 布局",
+  "secondaryAction": "查看更多示例",
+  
+  "footerInfo": "HelloYoga v1.0 | Powered by Facebook Yoga + Custom XML Parser"
+}

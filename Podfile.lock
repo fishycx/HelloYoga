@@ -1,0 +1,29 @@
+PODS:
+  - Pimeier (0.1.0):
+    - YogaKit
+  - Yoga (1.14.0)
+  - YogaKit (1.18.1):
+    - Yoga (~> 1.14)
+
+DEPENDENCIES:
+  - Pimeier (from `./LocalPods/Pimeier`)
+  - YogaKit
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - YogaKit
+  trunk:
+    - Yoga
+
+EXTERNAL SOURCES:
+  Pimeier:
+    :path: "./LocalPods/Pimeier"
+
+SPEC CHECKSUMS:
+  Pimeier: 4a55d5f8a7fdbd0b6702ee7973e4db4acb54a3ce
+  Yoga: cff67a400f6b74dc38eb0bad4f156673d9aa980c
+  YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
+
+PODFILE CHECKSUM: 454994dac0b296baaabbb546751f2ce7a0d2ef0a
+
+COCOAPODS: 1.16.2
