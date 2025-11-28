@@ -16,6 +16,7 @@ public class XMLLayoutParser: NSObject {
     private var nodeStack: [Int] = []  // 存储节点索引而不是节点本身
     private var currentNodeIndex: Int?
     private var rootNode: LayoutNode?
+    private var rawXMLString: String? // 存储原始 XML 字符串，用于手动提取丢失的属性
     
     public override init() {
         super.init()
@@ -31,11 +32,17 @@ public class XMLLayoutParser: NSObject {
     public func parse(data: Data) -> LayoutNode? {
         let parser = XMLParser(data: data)
         parser.delegate = self
+        parser.shouldProcessNamespaces = false
+        parser.shouldReportNamespacePrefixes = false
+        parser.shouldResolveExternalEntities = false
         
         rootNode = nil
         nodeStack = []
         currentNodeIndex = nil
         nodes = []
+        
+        // 保存原始 XML 字符串，用于手动提取丢失的属性
+        rawXMLString = String(data: data, encoding: .utf8)
         
         if parser.parse() {
             // 验证节点树构建
@@ -139,10 +146,39 @@ extension XMLLayoutParser: XMLParserDelegate {
         }
         
         // 调试属性解析
-        // print("📦 Parser: <\(elementName)> attributes: \(attributeDict.keys)")
+        if elementName == "list-view" {
+            print("📦 [Parser] <\(elementName)> attributes count: \(attributeDict.count)")
+            print("📦 [Parser] <\(elementName)> attributes: \(attributeDict.keys.sorted())")
+            print("📦 [Parser] Full attributeDict: \(attributeDict)")
+            
+            // 检查是否有 data 属性
+            if let dataValue = attributeDict["data"] {
+                print("✅ [Parser] Found data attribute: \(dataValue)")
+            } else {
+                print("❌ [Parser] data attribute NOT FOUND in attributeDict!")
+            }
+        }
         
         // 解析指令属性
         var attributes = attributeDict
+        
+        // 临时修复：如果 elementName 是 list-view 且缺少 data 属性，手动从原始 XML 中提取
+        if elementName == "list-view" && attributes["data"] == nil {
+            print("🔧 [Parser] Attempting manual extraction for list-view...")
+            if let xmlString = rawXMLString {
+                print("🔧 [Parser] rawXMLString exists, length: \(xmlString.count)")
+                if let extracted = extractAttributesFromXML(xmlString, forTag: "list-view") {
+                    print("🔧 [Parser] Successfully extracted \(extracted.count) attributes")
+                    attributes.merge(extracted) { (_, new) in new } // 合并提取的属性，新值优先
+                    print("🔧 [Parser] Manually extracted attributes for list-view: \(extracted.keys.sorted())")
+                } else {
+                    print("❌ [Parser] Manual extraction returned nil")
+                }
+            } else {
+                print("❌ [Parser] rawXMLString is nil!")
+            }
+        }
+        
         let ifCondition = attributes.removeValue(forKey: "if")
         let forLoop = attributes.removeValue(forKey: "for")
         
@@ -206,5 +242,63 @@ extension XMLLayoutParser: XMLParserDelegate {
     
     public func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
         print("❌ XML 解析错误: \(parseError.localizedDescription)")
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// 从原始 XML 字符串中手动提取指定标签的属性（用于修复 XMLParser 丢失属性的 bug）
+    private func extractAttributesFromXML(_ xmlString: String, forTag tagName: String) -> [String: String]? {
+        // 使用正则表达式匹配完整的开始标签（包括所有属性，支持跨行）
+        // 模式：<tagName 后面跟着任意字符（包括换行），直到遇到 >
+        let pattern = "<\(tagName)\\s+([\\s\\S]*?)>"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            print("❌ [Parser] Failed to create regex for tag: \(tagName)")
+            return nil
+        }
+        
+        let range = NSRange(location: 0, length: xmlString.utf16.count)
+        guard let match = regex.firstMatch(in: xmlString, options: [], range: range),
+              let attributesRange = Range(match.range(at: 1), in: xmlString) else {
+            print("❌ [Parser] No match found for tag: \(tagName)")
+            return nil
+        }
+        
+        let attributesString = String(xmlString[attributesRange])
+        print("🔍 [Parser] Extracted attributes string (full): \(attributesString)")
+        
+        var result: [String: String] = [:]
+        
+        // 解析属性字符串，格式：key="value" key2="value2"
+        // 注意：需要处理属性值中包含引号的情况，以及属性可能跨行的情况
+        // 改进：使用更健壮的正则表达式，支持属性名中的连字符（如 data-source）
+        let attrPattern = "([a-zA-Z][a-zA-Z0-9_-]*)\\s*=\\s*\"([^\"]*)\""
+        guard let attrRegex = try? NSRegularExpression(pattern: attrPattern, options: []) else {
+            print("❌ [Parser] Failed to create attribute regex")
+            return nil
+        }
+        
+        // 清理属性字符串：移除换行符和多余空格
+        let cleanedAttributes = attributesString.replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: "\r", with: " ")
+            .replacingOccurrences(of: "\t", with: " ")
+            .replacingOccurrences(of: "  +", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        
+        print("🔍 [Parser] Cleaned attributes string: \(cleanedAttributes)")
+        
+        let attrMatches = attrRegex.matches(in: cleanedAttributes, options: [], range: NSRange(location: 0, length: cleanedAttributes.utf16.count))
+        print("🔍 [Parser] Found \(attrMatches.count) attribute matches")
+        
+        for match in attrMatches {
+            if let keyRange = Range(match.range(at: 1), in: cleanedAttributes),
+               let valueRange = Range(match.range(at: 2), in: cleanedAttributes) {
+                let key = String(cleanedAttributes[keyRange])
+                let value = String(cleanedAttributes[valueRange])
+                result[key] = value
+                print("🔍 [Parser] Extracted: \(key) = \(value)")
+            }
+        }
+        
+        return result.isEmpty ? nil : result
     }
 }

@@ -1,23 +1,64 @@
 {
-  "navTitle": "",
-  "welcomeTitle": "欢迎使用sdfa ! 🎉",
-  "welcomeSubtitle": "这是一个完整的测试页面，展示了 XML 布局引擎的各种功能：Flexbox 布局、嵌套结构、丰富的样式属性和数据绑定。",
-  
-  "stat1Value": "128",
-  "stat1Label": "总访问量",
-  
-  "stat2Value": "42",
-  "stat2Label": "活跃用户",
-  
-  "feature1": "📊\n数据分析",
-  "feature2": "📱\n我的设备",
-  "feature3": "⚙️\n系统设置",
-  "feature4": "📝\n待办事项",
-  "feature5": "💬\n消息中心",
-  "feature6": "👤\n个人中心",
-  
-  "primaryAction": "开始使用 Yoga 布局",
-  "secondaryAction": "查看更多示例",
-  
-  "footerInfo": "HelloYoga v1.0 | Powered by Facebook Yoga + Custom XML Parser"
+    "navTitle": "Pimeier Demo - Multi Template",
+    "inputText": "",
+    "isRefreshing": false,
+    "footerInfo": "Powered by Pimeier Framework",
+    "todoList": [
+        {
+            "templateType": "header",
+            "title": "📋 任务列表"
+        },
+        {
+            "templateType": "item",
+            "title": "Learn Pimeier",
+            "subtitle": "Understand XML layout and JS logic"
+        },
+        {
+            "templateType": "item",
+            "title": "Build Custom Components",
+            "subtitle": "Like CircleView and PimeierListView"
+        },
+        {
+            "templateType": "button",
+            "title": "点击添加新任务",
+            "onClick": "addNewTask()"
+        },
+        {
+            "templateType": "switch",
+            "title": "启用通知",
+            "switchValue": true
+        },
+        {
+            "templateType": "switch",
+            "title": "自动同步",
+            "switchValue": false
+        },
+        {
+            "templateType": "large",
+            "title": "重要任务",
+            "subtitle": "这是一个大卡片样式的任务",
+            "description": "支持多行文本显示，适合展示详细信息",
+            "badge": "重要"
+        },
+        {
+            "templateType": "compact",
+            "title": "已完成任务数",
+            "value": "12"
+        },
+        {
+            "templateType": "compact",
+            "title": "待完成任务数",
+            "value": "5"
+        },
+        {
+            "templateType": "item",
+            "title": "Master Hot Reload",
+            "subtitle": "Edit files and see changes instantly"
+        },
+        {
+            "templateType": "button",
+            "title": "刷新数据",
+            "onClick": "onRefresh()"
+        }
+    ]
 }

@@ -20,6 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // 注册自定义 UI 组件
         ComponentRegistry.shared.register(CircleView.self, forTagName: "circle")
+        ComponentRegistry.shared.register(PimeierListView.self, forTagName: "list-view")
         
         return true
     }

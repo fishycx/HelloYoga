@@ -1,7 +1,7 @@
 var viewModel = {
     title: "My Tasks (JS)",
     inputText: "",
-    todos: [
+    todoList: [
         { title: "Learn Swift" },
         { title: "Master Yoga" },
         { title: "Build Pimeier" }
@@ -22,7 +22,7 @@ function addTodo() {
     
     if (text && text.length > 0) {
         // 添加新任务
-        viewModel.todos.push({ title: text });
+        viewModel.todoList.push({ title: text });
         log("✅ Added task: " + text);
         
         // 打印设备信息 (演示异步调用)
@@ -50,8 +50,8 @@ function addTodo() {
 
 function removeTodo(index) {
     log("Removing task at index: " + index);
-    if (index >= 0 && index < viewModel.todos.length) {
-        viewModel.todos.splice(index, 1);
+    if (index >= 0 && index < viewModel.todoList.length) {
+        viewModel.todoList.splice(index, 1);
         render();
     }
 }

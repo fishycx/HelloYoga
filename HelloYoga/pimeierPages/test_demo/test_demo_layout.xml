@@ -22,254 +22,165 @@
             color="white"/>
     </view>
     
-    <!-- 主内容区域 - 滚动视图 -->
-    <scrollView 
-        flexGrow="1" 
-        padding="20"
-        enablePullToRefresh="true"
-        enableLoadMore="true"
-        refreshThreshold="60"
-        loadMoreThreshold="100"
-        onRefresh="refresh()"
-        onLoadMore="loadMore()">
+    <!-- 主内容区域 - ListView -->
+    <list-view dataSource="viewModel.todoList" flexGrow="1" width="100%" backgroundColor="#F2F2F7" padding="10" paddingTop="10" paddingBottom="10">
         
-        <!-- 内容容器 -->
-        <view flexDirection="column" width="100%">
-            
-            <!-- 欢迎卡片 -->
+        <!-- 模板 1: 标准 Item (title + subtitle, 高度 70) -->
+        <template type="item">
             <view 
-                backgroundColor="white"
-                cornerRadius="16"
-                padding="20"
-                marginBottom="20"
-                borderWidth="1"
-                borderColor="#E0E0E0">
+                width="100%" 
+                height="70" 
+                backgroundColor="white" 
+                cornerRadius="12"
+                justifyContent="center"
+                paddingLeft="15"
+                paddingRight="15">
                 <text 
-                    text="{{ viewModel.welcomeTitle }}"
-                    fontSize="24"
-                    fontWeight="bold"
-                    color="#333333"
-                    marginBottom="10"/>
+                    text="{{ item.title }}" 
+                    fontSize="16" 
+                    fontWeight="bold" 
+                    color="#333333"/>
                 <text 
-                    text="{{ viewModel.welcomeSubtitle }}"
-                    fontSize="14"
-                    color="#666666"
-                    numberOfLines="0"/>
+                    text="{{ item.subtitle }}" 
+                    fontSize="12" 
+                    color="#8E8E93" 
+                    marginTop="4"/>
             </view>
-            
-            <!-- 统计卡片行 -->
+        </template>
+        
+        <!-- 模板 2: Header (标题样式, 高度 50) -->
+        <template type="header">
             <view 
-                flexDirection="row" 
+                width="100%" 
+                height="50" 
+                backgroundColor="#E3F2FD" 
+                cornerRadius="8"
+                justifyContent="center"
+                paddingLeft="15"
+                paddingRight="15">
+                <text 
+                    text="{{ item.title }}" 
+                    fontSize="18" 
+                    fontWeight="bold" 
+                    color="#1976D2"/>
+            </view>
+        </template>
+        
+        <!-- 模板 3: Button (按钮样式, 高度 60) -->
+        <template type="button">
+            <view 
+                width="100%" 
+                height="60" 
+                backgroundColor="white" 
+                cornerRadius="12"
+                justifyContent="center"
+                alignItems="center"
+                paddingLeft="15"
+                paddingRight="15">
+                <button 
+                    width="100%"
+                    height="44"
+                    title="{{ item.title }}"
+                    titleColor="white"
+                    backgroundColor="#007AFF"
+                    cornerRadius="8"
+                    onClick="{{ item.onClick }}"/>
+            </view>
+        </template>
+        
+        <!-- 模板 4: Switch (开关样式, 高度 50) -->
+        <template type="switch">
+            <view 
+                width="100%" 
+                height="50" 
+                backgroundColor="white" 
+                cornerRadius="12"
+                flexDirection="row"
                 justifyContent="spaceBetween"
-                marginBottom="20">
-                
-                <!-- 统计卡片 1 -->
-                <view 
-                    width="48%"
-                    height="100"
-                    backgroundColor="#FF6B6B"
-                    cornerRadius="12"
-                    justifyContent="center"
-                    alignItems="center"
-                    padding="15">
-                    <text 
-                        text="{{ viewModel.stat1Value }}"
-                        fontSize="32"
-                        fontWeight="bold"
-                        color="white"
-                        marginBottom="5"/>
-                    <text 
-                        text="{{ viewModel.stat1Label }}"
-                        fontSize="12"
-                        color="white"
-                        opacity="0.9"/>
-                </view>
-                
-                <!-- 统计卡片 2 -->
-                <view 
-                    width="48%"
-                    height="100"
-                    backgroundColor="#4ECDC4"
-                    cornerRadius="12"
-                    justifyContent="center"
-                    alignItems="center"
-                    padding="15">
-                    <text 
-                        text="{{ viewModel.stat2Value }}"
-                        fontSize="32"
-                        fontWeight="bold"
-                        color="white"
-                        marginBottom="5"/>
-                    <text 
-                        text="{{ viewModel.stat2Label }}"
-                        fontSize="12"
-                        color="white"
-                        opacity="0.9"/>
-                </view>
-            </view>
-            
-            <!-- 功能按钮网格 -->
-            <view marginBottom="20">
+                alignItems="center"
+                paddingLeft="15"
+                paddingRight="15">
                 <text 
-                    text="快捷功能"
-                    fontSize="18"
-                    fontWeight="semibold"
-                    color="#333333"
-                    marginBottom="15"/>
-                
-                <!-- 第一行按钮 -->
-                <view 
-                    flexDirection="row" 
-                    justifyContent="spaceBetween"
-                    marginBottom="15">
-                    <button 
-                        title="{{ viewModel.feature1 }}"
-                        width="30%"
-                        height="80"
-                        backgroundColor="#FFD93D"
-                        titleColor="#333333"
-                        fontSize="14"
-                        fontWeight="medium"
-                        cornerRadius="12"/>
-                    <button 
-                        title="{{ viewModel.feature2 }}"
-                        width="30%"
-                        height="80"
-                        backgroundColor="#6BCF7F"
-                        titleColor="white"
-                        fontSize="14"
-                        fontWeight="medium"
-                        cornerRadius="12"/>
-                    <button 
-                        title="{{ viewModel.feature3 }}"
-                        width="30%"
-                        height="80"
-                        backgroundColor="#A78BFA"
-                        titleColor="white"
-                        fontSize="14"
-                        fontWeight="medium"
-                        cornerRadius="12"/>
-                </view>
-                
-                <!-- 第二行按钮 -->
-                <view 
-                    flexDirection="row" 
-                    justifyContent="spaceBetween">
-                    <button 
-                        title="{{ viewModel.feature4 }}"
-                        width="30%"
-                        height="80"
-                        backgroundColor="#FB923C"
-                        titleColor="white"
-                        fontSize="14"
-                        fontWeight="medium"
-                        cornerRadius="12"/>
-                    <button 
-                        title="{{ viewModel.feature5 }}"
-                        width="30%"
-                        height="80"
-                        backgroundColor="#EC4899"
-                        titleColor="white"
-                        fontSize="14"
-                        fontWeight="medium"
-                        cornerRadius="12"/>
-                    <button 
-                        title="{{ viewModel.feature6 }}"
-                        width="30%"
-                        height="80"
-                        backgroundColor="#3B82F6"
-                        titleColor="white"
-                        fontSize="14"
-                        fontWeight="medium"
-                        cornerRadius="12"/>
-                </view>
+                    text="{{ item.title }}" 
+                    fontSize="16" 
+                    color="#333333"/>
+                <text 
+                    text="{{ item.switchValue ? 'ON' : 'OFF' }}" 
+                    fontSize="14" 
+                    color="{{ item.switchValue ? '#34C759' : '#8E8E93' }}"
+                    marginRight="10"/>
             </view>
-            
-            <!-- 大按钮 -->
-            <button 
-                title="{{ viewModel.primaryAction }}"
-                onClick="primaryAction()"
-                height="56"
-                width="100%"
-                backgroundColor="#0033AFF"
-                titleColor="white"
-                fontSize="18"
-                fontWeight="bold"
-                cornerRadius="16"
-                marginBottom="15"/>
-            
-            <!-- 次要按钮 -->
-            <button 
-                title="{{ viewModel.secondaryAction }}"
-                onClick="secondaryAction()"
-                height="56"
-                width="100%"
-                backgroundColor="white"
-                titleColor="#007AFF"
-                fontSize="18"
-                fontWeight="semibold"
-                cornerRadius="16"
-                borderWidth="2"
-                borderColor="#007AFF"
-                marginBottom="20"/>
-            
-            <!-- 额外内容区域 - 用于测试滚动和加载更多 -->
+        </template>
+        
+        <!-- 模板 5: Large (大卡片样式, 高度 120) -->
+        <template type="large">
             <view 
-                backgroundColor="#F8F8F8"
+                width="100%" 
+                height="120" 
+                backgroundColor="white" 
                 cornerRadius="12"
-                padding="20"
-                marginBottom="20">
+                padding="15"
+                flexDirection="column"
+                justifyContent="spaceBetween">
+                <view flexDirection="row" alignItems="center">
+                    <text 
+                        text="{{ item.title }}" 
+                        fontSize="20" 
+                        fontWeight="bold" 
+                        color="#333333"
+                        flex="1"/>
+                    <view 
+                        backgroundColor="#FF3B30"
+                        paddingLeft="8"
+                        paddingRight="8"
+                        paddingTop="4"
+                        paddingBottom="4"
+                        cornerRadius="10"
+                        justifyContent="center"
+                        alignItems="center">
+                        <text 
+                            text="{{ item.badge }}" 
+                            fontSize="12" 
+                            color="white"/>
+                    </view>
+                </view>
                 <text 
-                    fontSize="16"
-                    fontWeight="bold"
-                    color="#333333"
-                    marginBottom="10"
-                    text="📋 更多内容"/>
+                    text="{{ item.subtitle }}" 
+                    fontSize="14" 
+                    color="#8E8E93"/>
                 <text 
-                    fontSize="14"
-                    color="#666666"
-                    numberOfLines="0"
-                    text="这是额外的内容区域，用于测试 ScrollView 的滚动功能和上拉加载更多功能。当内容足够多时，ScrollView 就可以正常滚动了。"/>
+                    text="{{ item.description }}" 
+                    fontSize="12" 
+                    color="#999999"
+                    marginTop="4"/>
             </view>
-            
+        </template>
+        
+        <!-- 模板 6: Compact (紧凑样式, 高度 40) -->
+        <template type="compact">
             <view 
-                backgroundColor="#E8F4FD"
-                cornerRadius="12"
-                padding="20"
-                marginBottom="20">
+                width="100%" 
+                height="40" 
+                backgroundColor="white" 
+                cornerRadius="8"
+                flexDirection="row"
+                alignItems="center"
+                paddingLeft="15"
+                paddingRight="15">
                 <text 
-                    fontSize="16"
-                    fontWeight="bold"
-                    color="#007AFF"
-                    marginBottom="10"
-                    text="💡 提示"/>
-                <text 
-                    fontSize="14"
+                    text="{{ item.title }}" 
+                    fontSize="14" 
                     color="#666666"
-                    numberOfLines="0"
-                    text="下拉可以刷新页面，上拉到底部可以加载更多内容。试试看吧！"/>
-            </view>
-            
-            <view 
-                backgroundColor="#FFF4E6"
-                cornerRadius="12"
-                padding="20"
-                marginBottom="20">
+                    flex="1"/>
                 <text 
-                    fontSize="16"
-                    fontWeight="bold"
-                    color="#FF9800"
-                    marginBottom="10"
-                    text="🎯 功能说明"/>
-                <text 
-                    fontSize="14"
-                    color="#666666"
-                    numberOfLines="0"
-                    text="这个页面展示了 Yoga 布局引擎的强大功能，包括 Flexbox 布局、嵌套结构、样式属性和数据绑定。同时支持下拉刷新和上拉加载更多。"/>
+                    text="{{ item.value }}" 
+                    fontSize="14" 
+                    fontWeight="medium"
+                    color="#333333"/>
             </view>
-                
-        </view>
-    </scrollView>
+        </template>
+        
+    </list-view>
     
     <!-- 底部信息栏 -->
     <view 

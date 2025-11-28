@@ -194,4 +194,15 @@ public class PimeierJSEngine {
     public func setObject(_ object: Any, forKey key: String) {
         context.setObject(object, forKeyedSubscript: key as NSCopying & NSObjectProtocol)
     }
+    
+    /// 创建 JSValue
+    public func createValue(from object: Any) -> JSValue? {
+        return JSValue(object: object, in: context)
+    }
+    
+    /// 从 JSON 字符串创建 JSValue (更安全的数据传递方式)
+    public func createValue(fromJson json: String) -> JSValue? {
+        let parser = context.evaluateScript("(function(json) { return JSON.parse(json); })")
+        return parser?.call(withArguments: [json])
+    }
 }

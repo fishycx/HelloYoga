@@ -41,11 +41,11 @@
                   color="gray" 
                   textAlign="center" 
                   marginTop="20" 
-                  if="viewModel.todos.length == 0"/>
+                  if="viewModel.todoList.length == 0"/>
             
             <!-- Dynamic Items -->
-            <container for="todo in viewModel.todos"
-                       flexDirection="row" 
+            <container for="todo in viewModel.todoList"
+                       flexDirection="row"
                        width="100%" 
                        height="60" 
                        marginBottom="10" 

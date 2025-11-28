@@ -48,6 +48,12 @@ public class PimeierRenderer {
         // 2. 初始化 Yoga 构建器
         if yogaBuilder == nil {
             yogaBuilder = YogaNodeBuilder()
+            // 注入渲染器依赖
+            yogaBuilder?.onViewCreated = { [weak self] view in
+                if let self = self, let rendererAware = view as? PimeierRendererAware {
+                    rendererAware.setRenderer(self)
+                }
+            }
         }
         
         // 3. 递归构建
@@ -86,6 +92,26 @@ public class PimeierRenderer {
         return yogaBuilder
     }
     
+    /// 创建 JSValue (用于列表项数据绑定)
+    public func createJSValue(from object: Any) -> JSValue? {
+        return jsEngine.createValue(from: object)
+    }
+    
+    /// 从 JSON 创建 JSValue
+    public func createJSValue(fromJson json: String) -> JSValue? {
+        return jsEngine.createValue(fromJson: json)
+    }
+    
+    /// 执行脚本 (Public)
+    public func evaluateScript(_ script: String) -> JSValue? {
+        return jsEngine.evaluate(script)
+    }
+    
+    /// 在指定 Context 中执行表达式 (Public Wrapper)
+    public func evaluateExpression(_ expression: String, with context: JSValue?) -> JSValue? {
+        return evaluateExpression(expression, context: context)
+    }
+    
     // MARK: - Recursive Build
     
     /// 递归构建节点
@@ -113,33 +139,32 @@ public class PimeierRenderer {
         
         // 3.1 解析属性中的表达式 {{ ... }}
         var resolvedAttributes = node.attributes
+        print("🔍 [Renderer] buildNode type=\(node.type.rawValue), original attributes: \(node.attributes.keys)")
         for (key, value) in node.attributes {
             resolvedAttributes[key] = resolveString(value, context: context)
         }
+        print("🔍 [Renderer] buildNode resolved attributes: \(resolvedAttributes.keys)")
         
         // 3.2 创建视图
         // 我们需要临时创建一个 Resolve 后的 LayoutNode
-        // 注意：这里只是为了传递给 YogaNodeBuilder，children 此时是空的，稍后递归填充
+        // 注意：对于自定义组件（如 list-view），我们需要把 template 子节点也传递过去
+        // 因为 YogaNodeBuilder 需要处理 template 节点来调用 registerTemplate
+        var templateChildren: [LayoutNode] = []
+        if node.type == .custom {
+            // 只传递 template 子节点给 YogaNodeBuilder
+            templateChildren = node.children.filter { $0.type == .template }
+        }
+        
         let resolvedNode = LayoutNode(
             type: node.type,
             attributes: resolvedAttributes,
-            children: [], // 暂时为空
+            children: templateChildren, // 对于自定义组件，传递 template 子节点
             ifCondition: nil,
             forLoop: nil,
             customType: node.customType
         )
         
         // 使用 YogaNodeBuilder 创建视图和 Yoga 节点
-        // 注意：我们需要稍微修改 YogaNodeBuilder 的 buildViewTree 逻辑
-        // 或者我们分步调用：createView -> createYogaNode -> processChildren
-        // 目前 buildViewTree 是递归的，这不符合我们的需求（因为我们需要介入子节点的创建过程）
-        
-        // 临时解决方案：我们扩展 YogaNodeBuilder，提供 createSingleView 接口
-        // 或者我们在这里手动调用 builder 的内部方法（如果可见）
-        
-        // 为了不破坏 YogaNodeBuilder 的封装，我们让它构建一个"只有一层"的树
-        // 然后我们自己处理 children 的添加
-        
         guard let view = yogaBuilder?.buildViewTree(from: resolvedNode) else { return [] }
         
         // 3.3 绑定事件
@@ -148,12 +173,16 @@ public class PimeierRenderer {
         bindEvents(for: view, attributes: resolvedAttributes, originalAttributes: node.attributes, context: context)
         
         // 3.4 递归处理子节点
-        for childNode in node.children {
-            let childViews = buildNode(childNode, context: context)
-            
-            for childView in childViews {
-                // 使用 YogaNodeBuilder 的 attachChild 挂载子节点
-                yogaBuilder?.attachChild(childView, to: view)
+        // 重要：如果是 template 节点，不要递归它的子节点！
+        // template 的内容是惰性的，只在实例化时（如 ListView 渲染 Item）才被解析
+        if node.type != .template {
+            for childNode in node.children {
+                let childViews = buildNode(childNode, context: context)
+                
+                for childView in childViews {
+                    // 使用 YogaNodeBuilder 的 attachChild 挂载子节点
+                    yogaBuilder?.attachChild(childView, to: view)
+                }
             }
         }
         
@@ -252,7 +281,16 @@ public class PimeierRenderer {
         for match in matches.reversed() {
             if let range = Range(match.range(at: 1), in: raw) {
                 let expression = String(raw[range]).trimmingCharacters(in: .whitespaces)
+                print("🔍 [Renderer] 解析表达式: '\(expression)' (原始字符串: '\(raw)')")
+                
                 let value = evaluateExpression(expression, context: context)
+                
+                if let value = value, !value.isUndefined {
+                    let replacement = value.toString()
+                    print("✅ [Renderer] 表达式解析成功: '\(expression)' = '\(replacement)'")
+                } else {
+                    print("⚠️ [Renderer] 表达式解析失败或返回 undefined: '\(expression)'")
+                }
                 
                 let replacement = value?.toString() ?? ""
                 
@@ -267,34 +305,58 @@ public class PimeierRenderer {
     
     /// 执行 JS 表达式
     private func evaluateExpression(_ expression: String, context: JSValue?) -> JSValue? {
-        // 增加日志追踪
-        // print("📝 [Renderer] Try evaluate: \(expression)")
-        
         // 1. 尝试在局部 Context 执行 (如果存在)
         if let context = context, !context.isUndefined {
-            // 使用 Function + with 语法在指定 scope 下执行
-            let script = "(function(scope) { with(scope) { return (\(expression)); } })"
+            print("🔍 [Renderer] 在局部 Context 中执行表达式: '\(expression)'")
+            // 使用 new Function 动态构建作用域，替代 with()
+            // 这种方式将 scope 的 keys 转换为函数参数，避免了 Strict Mode 下 with 被禁用的问题
+            let script = """
+            (function(scope, expressionStr) {
+                try {
+                    var keys = Object.keys(scope);
+                    log("DEBUG: Scope Keys: " + keys.join(", ") + " | Expr: " + expressionStr);
+                    
+                    var values = keys.map(function(k) { return scope[k]; });
+                    
+                    // 兼容性写法：将参数名用逗号连接
+                    // new Function("a,b", body) 是合法的标准写法
+                    var argsStr = keys.join(",");
+                    var func = new Function(argsStr, "return (" + expressionStr + ");");
+                    
+                    return func.apply(null, values);
+                } catch (e) {
+                    throw e;
+                }
+            })
+            """
+            
             if let function = context.context.evaluateScript(script) {
-                let result = function.call(withArguments: [context])
+                let result = function.call(withArguments: [context, expression])
                 
                 // 检查是否有异常发生
                 if let exception = context.context.exception, !exception.isUndefined {
                     // 发生了异常（例如 ReferenceError），清除异常并尝试全局执行
-                    // print("⚠️ 局部执行异常: \(exception), 尝试全局执行")
+                    print("⚠️ [Renderer] 局部执行异常: \(exception) for expression: \(expression)")
                     context.context.exception = nil // 清除异常
                 } else {
                     // 执行成功（包括返回 undefined），直接返回
+                    if let result = result {
+                        print("✅ [Renderer] 局部执行成功: '\(expression)' -> \(result.isUndefined ? "undefined" : result.toString())")
+                    }
                     return result
                 }
             }
         }
         
-        // 2. 如果没有 context 或 局部执行失败(虽然 with 应该涵盖了 global)，
-        // 显式回退到 Global 执行（作为兜底）
-        // 注意：如果上面的 call 返回了 undefined，并不代表出错，可能表达式结果就是 undefined。
-        // 但如果上面的逻辑没有覆盖到，我们这里直接在 global 执行。
-        
-        return jsEngine.evaluate(expression)
+        // 2. 如果没有 context 或 局部执行失败，尝试全局执行
+        print("🔍 [Renderer] 在全局 Context 中执行表达式: '\(expression)'")
+        let result = jsEngine.evaluate(expression)
+        if let result = result {
+            print("✅ [Renderer] 全局执行结果: '\(expression)' -> \(result.isUndefined ? "undefined" : result.toString())")
+        } else {
+            print("❌ [Renderer] 全局执行返回 nil: '\(expression)'")
+        }
+        return result
     }
     
     // MARK: - Event Binding
@@ -378,54 +440,7 @@ public class PimeierRenderer {
             }
         }
         
-        // 3. 处理 ScrollView 的刷新回调
-        if let scrollView = view as? UIScrollView {
-            // 下拉刷新 onRefresh
-            var onRefreshScript: String?
-            for (key, value) in attributes {
-                if key.lowercased() == "onrefresh" {
-                    onRefreshScript = value
-                    break
-                }
-            }
-            
-            if let onRefresh = onRefreshScript,
-               let refreshControl = yogaBuilder?.getRefreshControl(for: scrollView) {
-                
-                refreshControl.onRefresh = { [weak self] in
-                    // print("🔄 [Renderer] 触发下拉刷新: \(onRefresh)")
-                    _ = self?.evaluateExpression(onRefresh, context: context)
-                    
-                    // 模拟网络延迟后结束刷新 (后续应通过 Bridge 由 JS 控制)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        refreshControl.endRefreshing()
-                    }
-                }
-            }
-            
-            // 上拉加载 onLoadMore
-            var onLoadMoreScript: String?
-            for (key, value) in attributes {
-                if key.lowercased() == "onloadmore" {
-                    onLoadMoreScript = value
-                    break
-                }
-            }
-            
-            if let onLoadMore = onLoadMoreScript,
-               let loadMoreControl = yogaBuilder?.getLoadMoreControl(for: scrollView) {
-                
-                loadMoreControl.onLoadMore = { [weak self] in
-                    // print("📥 [Renderer] 触发加载更多: \(onLoadMore)")
-                    _ = self?.evaluateExpression(onLoadMore, context: context)
-                    
-                    // 模拟网络延迟后结束加载 (后续应通过 Bridge 由 JS 控制)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        loadMoreControl.endLoading(hasMore: true)
-                    }
-                }
-            }
-        }
+        // 3. 处理 ScrollView 的刷新回调 (已移除，转为 CollectionView)
     }
 }
 

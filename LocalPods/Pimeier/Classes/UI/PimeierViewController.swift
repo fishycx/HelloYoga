@@ -101,7 +101,6 @@ open class PimeierViewController: UIViewController {
                 width: view.bounds.width,
                 height: view.bounds.height
             )
-            yogaBuilder?.updateRefreshViewsFrames()
         }
     }
     
@@ -121,8 +120,11 @@ open class PimeierViewController: UIViewController {
             return
         }
         
-        print("📂 [Node 7] XML 路径: \(xmlURL.path.contains("HotUpdate") ? "🔥 CACHE" : "📦 BUNDLE") - \(xmlURL.lastPathComponent)")
-        print("📂 [Node 7] JSON 路径: \(dataURL.path.contains("HotUpdate") ? "🔥 CACHE" : "📦 BUNDLE") - \(dataURL.lastPathComponent)")
+        let xmlSource = xmlURL.path.contains("HotUpdate") ? "🔥 CACHE" : "📦 BUNDLE"
+        let jsonSource = dataURL.path.contains("HotUpdate") ? "🔥 CACHE" : "📦 BUNDLE"
+        print("📂 [Node 7] XML 路径: \(xmlSource) - \(xmlURL.lastPathComponent)")
+        print("📂 [Node 7] JSON 路径: \(jsonSource) - \(dataURL.lastPathComponent)")
+        print("📂 [Node 7] JSON 完整路径: \(dataURL.path)")
         
         // 尝试加载 logic.js
         if let jsURL = TemplateManager.shared.getTemplateURL(templateId: templateID, fileName: logicFileName),
@@ -140,12 +142,101 @@ open class PimeierViewController: UIViewController {
         
         // 3. 加载初始数据 (ViewModel)
         // 总是尝试加载 pageData.json 并注入到 JS，以支持热重载更新数据
+        print("📂 [Node 9] 准备加载 JSON 文件:")
+        print("   📍 文件路径: \(dataURL.path)")
+        print("   📍 文件来源: \(jsonSource)")
+        print("   📍 文件是否存在: \(FileManager.default.fileExists(atPath: dataURL.path))")
+        
+        // 直接读取文件内容并打印前200个字符
+        if let fileContent = try? String(contentsOf: dataURL, encoding: .utf8) {
+            print("   📄 文件内容前200字符: \(String(fileContent.prefix(200)))")
+            // 检查是否包含 todoList
+            if fileContent.contains("todoList") {
+                print("   ✅ 文件内容包含 'todoList'")
+            } else {
+                print("   ❌ 文件内容不包含 'todoList'！")
+            }
+        } else {
+            print("   ❌ 无法读取文件内容")
+        }
+        
         if let jsonData = try? Data(contentsOf: dataURL),
            let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []) {
-            // 注入到 JS 全局对象 'viewModel'
-            jsEngine?.setObject(jsonObject, forKey: "viewModel")
-            print("💉 [Node 9] 注入最新 JSON 数据到 JS Context")
-            // print("   📦 数据内容: \(jsonObject)")
+            
+            // 打印读取到的 JSON 对象 keys
+            if let dict = jsonObject as? [String: Any] {
+                print("📦 [Node 9] 读取到的 JSON keys: \(dict.keys.sorted())")
+                if let todoList = dict["todoList"] {
+                    print("✅ [Node 9] JSON 中包含 todoList: \(todoList)")
+                } else {
+                    print("❌ [Node 9] JSON 中不包含 todoList!")
+                }
+            }
+            
+            // 先清理旧的 viewModel，确保完全替换
+            print("🧹 [Node 9] 清理旧的 viewModel...")
+            jsEngine?.evaluate("viewModel = undefined;")
+            
+            // 验证清理是否成功
+            if let oldVM = jsEngine?.evaluate("viewModel") {
+                print("🧹 [Node 9] 清理后 viewModel 状态: isUndefined=\(oldVM.isUndefined)")
+            }
+            
+            // 使用 JSON 序列化方式注入，确保完全替换对象
+            // 使用更安全的方法：通过函数参数传递 JSON 字符串
+            if let jsonString = try? JSONSerialization.data(withJSONObject: jsonObject, options: []),
+               let jsonStr = String(data: jsonString, encoding: .utf8) {
+                print("📝 [Node 9] JSON 字符串长度: \(jsonStr.count), 前100字符: \(String(jsonStr.prefix(100)))")
+                
+                // 使用函数参数方式，避免字符串转义问题
+                let injectScript = """
+                (function() {
+                    var jsonStr = arguments[0];
+                    viewModel = JSON.parse(jsonStr);
+                    return viewModel;
+                })
+                """
+                if let injectFunc = jsEngine?.evaluate(injectScript) {
+                    if let result = injectFunc.call(withArguments: [jsonStr]) {
+                        print("✅ [Node 9] JSON.parse 执行成功")
+                        if let resultDict = result.toDictionary() {
+                            print("📦 [Node 9] 注入后的 viewModel keys: \(resultDict.keys)")
+                        }
+                    } else {
+                        print("❌ [Node 9] JSON.parse 执行失败")
+                    }
+                    print("💉 [Node 9] 注入最新 JSON 数据到 JS Context (via JSON.parse)")
+                } else {
+                    // 降级方案：使用 setObject
+                    print("⚠️ [Node 9] injectFunc 创建失败，使用 setObject 降级方案")
+                    jsEngine?.setObject(jsonObject, forKey: "viewModel")
+                    print("💉 [Node 9] 注入最新 JSON 数据到 JS Context (via setObject)")
+                }
+            } else {
+                // 降级方案：使用 setObject
+                print("⚠️ [Node 9] JSON 序列化失败，使用 setObject 降级方案")
+                jsEngine?.setObject(jsonObject, forKey: "viewModel")
+                print("💉 [Node 9] 注入最新 JSON 数据到 JS Context (via setObject)")
+            }
+            
+            // 验证注入是否成功
+            print("🔍 [Node 9] 验证注入结果...")
+            if let vm = jsEngine?.evaluate("viewModel"), !vm.isUndefined {
+                if let vmDict = vm.toDictionary() {
+                    print("💉 [Node 9] viewModel keys: \(vmDict.keys)")
+                    if let todoList = vmDict["todoList"] {
+                        print("✅ [Node 9] viewModel 中包含 todoList: \(todoList)")
+                    } else {
+                        print("❌ [Node 9] viewModel 中不包含 todoList!")
+                    }
+                } else {
+                    print("❌ [Node 9] viewModel 无法转换为 Dictionary")
+                }
+            } else {
+                print("❌ [Node 9] viewModel 注入失败！viewModel is undefined")
+            }
+        } else {
+            print("❌ [Node 9] 无法读取或解析 JSON 文件: \(dataURL.path)")
         }
         
         // 4. 使用 Renderer 渲染视图树
@@ -182,6 +273,18 @@ open class PimeierViewController: UIViewController {
         
         view.setNeedsLayout()
         view.layoutIfNeeded()
+    }
+    
+    private func findFirstScrollView(in view: UIView) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView {
+            return scrollView
+        }
+        for sub in view.subviews {
+            if let found = findFirstScrollView(in: sub) {
+                return found
+            }
+        }
+        return nil
     }
     
     /// 查找模版资源（XML 和 JSON）

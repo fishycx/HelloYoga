@@ -34,9 +34,12 @@ public struct LayoutNode {
         case header
         case footer
         case content
+        case template // 模版定义节点
+        case custom // 自定义组件
+        
+        // 已废弃的类型，保留枚举 case 但不处理，或者直接移除
         case refreshView
         case loadMoreView
-        case custom // 自定义组件
     }
     
     public init(type: NodeType, attributes: [String : String], children: [LayoutNode], ifCondition: String? = nil, forLoop: String? = nil, customType: String? = nil) {
@@ -483,39 +486,6 @@ public struct ViewStyle {
     }
 }
 
-// MARK: - ScrollView 刷新配置
+// MARK: - ScrollView 刷新配置 (已废弃)
+// public struct ScrollViewRefreshConfig { ... }
 
-/// ScrollView 刷新和加载更多配置
-public struct ScrollViewRefreshConfig {
-    public var enablePullToRefresh: Bool = false
-    public var enableLoadMore: Bool = false
-    public var refreshThreshold: CGFloat = 60.0
-    public var loadMoreThreshold: CGFloat = 100.0
-    public var refreshViewId: String?
-    public var loadMoreViewId: String?
-    
-    public static func from(attributes: [String: String]) -> ScrollViewRefreshConfig {
-        var config = ScrollViewRefreshConfig()
-        
-        for (key, value) in attributes {
-            switch key.lowercased() {
-            case "enablepulltorefresh", "pulltorefresh":
-                config.enablePullToRefresh = (value.lowercased() == "true")
-            case "enableloadmore", "loadmore":
-                config.enableLoadMore = (value.lowercased() == "true")
-            case "refreshthreshold":
-                config.refreshThreshold = CGFloat(Float(value) ?? 60.0)
-            case "loadmorethreshold":
-                config.loadMoreThreshold = CGFloat(Float(value) ?? 100.0)
-            case "refreshviewid", "refreshview":
-                config.refreshViewId = value.isEmpty ? nil : value
-            case "loadmoreviewid", "loadmoreview":
-                config.loadMoreViewId = value.isEmpty ? nil : value
-            default:
-                break
-            }
-        }
-        
-        return config
-    }
-}

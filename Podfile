@@ -24,7 +24,7 @@ post_install do |installer|
       
       # Fix for Yoga compilation error with newer Clang
       if target.name == 'Yoga' || target.name == 'YogaKit'
-        config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
         config.build_settings['WARNING_CFLAGS'] ||= ['$(inherited)']
         config.build_settings['WARNING_CFLAGS'] << '-Wno-bitwise-instead-of-logical'
         config.build_settings['OTHER_CFLAGS'] ||= ['$(inherited)']

@@ -1,13 +1,5 @@
 // logic.js for test_demo
 
-// If viewModel is not defined, we will let PimeierVC inject it from JSON.
-// If we define it here as {}, it will override JSON data because JS runs first.
-// So we remove the initialization.
-
-// However, if we want to add methods to viewModel later, we need to ensure it exists?
-// No, methods are global functions in Pimeier logic.js.
-// viewModel is just data.
-
 // Example functions that could be bound to buttons
 function primaryAction() {
     Pimeier.Toast.show("Primary Action Clicked!");
@@ -17,13 +9,52 @@ function secondaryAction() {
     Pimeier.Toast.show("Secondary Action Clicked!");
 }
 
-// Mock refresh logic
-function refresh() {
-    Pimeier.Toast.show("Refreshing...");
-    // In a real app, this would fetch data and update viewModel
+// Refresh logic
+function onRefresh() {
+    log("Refreshing...");
+    viewModel.isRefreshing = true;
+    render();
+    
+    // 模拟数据更新
+    var newItem = { 
+        title: "New Item " + Math.floor(Math.random() * 100), 
+        subtitle: "Added via Refresh at " + new Date().toLocaleTimeString() 
+    };
+    
+    // 插入到头部
+    if (!viewModel.todoList) viewModel.todoList = [];
+    viewModel.todoList.unshift(newItem);
+    
+    viewModel.isRefreshing = false;
+    render();
+    
+    Pimeier.Toast.show("Refreshed! Added " + newItem.title);
+    if (Pimeier.Device && Pimeier.Device.vibrate) {
+        Pimeier.Device.vibrate();
+    }
 }
 
 // Mock load more logic
 function loadMore() {
     Pimeier.Toast.show("Loading more...");
+}
+
+// Add new task function
+function addNewTask() {
+    log("Adding new task...");
+    if (!viewModel.todoList) viewModel.todoList = [];
+    
+    var newTask = {
+        templateType: "item",
+        title: "New Task " + Math.floor(Math.random() * 1000),
+        subtitle: "Created at " + new Date().toLocaleTimeString()
+    };
+    
+    viewModel.todoList.push(newTask);
+    render();
+    
+    Pimeier.Toast.show("Task added: " + newTask.title);
+    if (Pimeier.Device && Pimeier.Device.vibrate) {
+        Pimeier.Device.vibrate();
+    }
 }
