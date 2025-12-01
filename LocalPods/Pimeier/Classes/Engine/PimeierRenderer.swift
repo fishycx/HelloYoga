@@ -440,7 +440,121 @@ public class PimeierRenderer {
             }
         }
         
-        // 3. 处理 ScrollView 的刷新回调 (已移除，转为 CollectionView)
+        // 3. 处理 UISwitch 的 onChange 事件和双向绑定
+        if let switchControl = view as? UISwitch {
+            // 查找 onChange 事件和 value 绑定
+            var onChangeScript: String?
+            for (key, value) in attributes {
+                if key.lowercased() == "onchange" {
+                    onChangeScript = value
+                    break
+                }
+            }
+            
+            var bindingExpression: String?
+            if let valueAttr = originalAttributes["value"] {
+                let pattern = "^\\{\\{(.+?)\\}\\}$"
+                if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+                   let match = regex.firstMatch(in: valueAttr, options: [], range: NSRange(location: 0, length: valueAttr.utf16.count)),
+                   let range = Range(match.range(at: 1), in: valueAttr) {
+                    bindingExpression = String(valueAttr[range]).trimmingCharacters(in: .whitespaces)
+                    print("🔗 [Renderer] Switch binding detected: \(bindingExpression ?? "nil")")
+                }
+            }
+            
+            // 如果存在 onChange 或 value 绑定，创建统一的 wrapper
+            if onChangeScript != nil || bindingExpression != nil {
+                let wrapper = SwitchChangeWrapper { [weak self] isOn in
+                    // 1. 先执行双向绑定（如果有）
+                    if let expression = bindingExpression {
+                        let script = "\(expression) = \(isOn ? "true" : "false")"
+                        _ = self?.evaluateExpression(script, context: context)
+                    }
+                    
+                    // 2. 再执行 onChange 事件（如果有）
+                    if let onChange = onChangeScript {
+                        // 直接在原 context 上设置 value 属性，而不是创建新 context
+                        // 这样可以保持 item 和 index 的引用，同时添加 value
+                        if let originalContext = context, !originalContext.isUndefined {
+                            // 在原 context 上设置 value 属性
+                            originalContext.setValue(isOn, forProperty: "value")
+                            _ = self?.evaluateExpression(onChange, context: originalContext)
+                        } else {
+                            // 如果没有原 context，创建一个新的
+                            let contextData: [String: Any] = ["value": isOn]
+                            if let jsonData = try? JSONSerialization.data(withJSONObject: contextData, options: []),
+                               let jsonString = String(data: jsonData, encoding: .utf8),
+                               let jsContext = self?.createJSValue(fromJson: jsonString) {
+                                _ = self?.evaluateExpression(onChange, context: jsContext)
+                            } else {
+                                _ = self?.evaluateExpression(onChange, context: context)
+                            }
+                        }
+                    }
+                }
+                objc_setAssociatedObject(switchControl, &SwitchChangeWrapper.associatedKey, wrapper, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                switchControl.addTarget(wrapper, action: #selector(SwitchChangeWrapper.valueChanged(_:)), for: .valueChanged)
+            }
+        }
+        
+        // 4. 处理 UISlider 的 onChange 事件和双向绑定
+        if let slider = view as? UISlider {
+            // 查找 onChange 事件和 value 绑定
+            var onChangeScript: String?
+            for (key, value) in attributes {
+                if key.lowercased() == "onchange" {
+                    onChangeScript = value
+                    break
+                }
+            }
+            
+            var bindingExpression: String?
+            if let valueAttr = originalAttributes["value"] {
+                let pattern = "^\\{\\{(.+?)\\}\\}$"
+                if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+                   let match = regex.firstMatch(in: valueAttr, options: [], range: NSRange(location: 0, length: valueAttr.utf16.count)),
+                   let range = Range(match.range(at: 1), in: valueAttr) {
+                    bindingExpression = String(valueAttr[range]).trimmingCharacters(in: .whitespaces)
+                    print("🔗 [Renderer] Slider binding detected: \(bindingExpression ?? "nil")")
+                }
+            }
+            
+            // 如果存在 onChange 或 value 绑定，创建统一的 wrapper
+            if onChangeScript != nil || bindingExpression != nil {
+                let wrapper = SliderChangeWrapper { [weak self] value in
+                    // 1. 先执行双向绑定（如果有）
+                    if let expression = bindingExpression {
+                        let script = "\(expression) = \(value)"
+                        _ = self?.evaluateExpression(script, context: context)
+                    }
+                    
+                    // 2. 再执行 onChange 事件（如果有）
+                    if let onChange = onChangeScript {
+                        // 直接在原 context 上设置 value 属性，而不是创建新 context
+                        // 这样可以保持 item 和 index 的引用，同时添加 value
+                        if let originalContext = context, !originalContext.isUndefined {
+                            // 在原 context 上设置 value 属性
+                            originalContext.setValue(value, forProperty: "value")
+                            _ = self?.evaluateExpression(onChange, context: originalContext)
+                        } else {
+                            // 如果没有原 context，创建一个新的
+                            let contextData: [String: Any] = ["value": value]
+                            if let jsonData = try? JSONSerialization.data(withJSONObject: contextData, options: []),
+                               let jsonString = String(data: jsonData, encoding: .utf8),
+                               let jsContext = self?.createJSValue(fromJson: jsonString) {
+                                _ = self?.evaluateExpression(onChange, context: jsContext)
+                            } else {
+                                _ = self?.evaluateExpression(onChange, context: context)
+                            }
+                        }
+                    }
+                }
+                objc_setAssociatedObject(slider, &SliderChangeWrapper.associatedKey, wrapper, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+                slider.addTarget(wrapper, action: #selector(SliderChangeWrapper.valueChanged(_:)), for: .valueChanged)
+            }
+        }
+        
+        // 5. 处理 ScrollView 的刷新回调 (已移除，转为 CollectionView)
     }
 }
 
@@ -475,5 +589,33 @@ class TextChangeWrapper: NSObject {
     
     @objc func textChanged(_ sender: UITextField) {
         callback(sender.text ?? "")
+    }
+}
+
+// Switch 变更包装器
+class SwitchChangeWrapper: NSObject {
+    static var associatedKey = "SwitchChangeWrapperKey"
+    let callback: (Bool) -> Void
+    
+    init(callback: @escaping (Bool) -> Void) {
+        self.callback = callback
+    }
+    
+    @objc func valueChanged(_ sender: UISwitch) {
+        callback(sender.isOn)
+    }
+}
+
+// Slider 变更包装器
+class SliderChangeWrapper: NSObject {
+    static var associatedKey = "SliderChangeWrapperKey"
+    let callback: (Float) -> Void
+    
+    init(callback: @escaping (Float) -> Void) {
+        self.callback = callback
+    }
+    
+    @objc func valueChanged(_ sender: UISlider) {
+        callback(sender.value)
     }
 }

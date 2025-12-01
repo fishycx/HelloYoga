@@ -121,6 +121,14 @@ public class PimeierJSEngine {
             Device: {
                 getInfo: function() { return Pimeier.invoke('Device', 'getInfo'); },
                 vibrate: function() { return Pimeier.invoke('Device', 'vibrate'); }
+            },
+            
+            // System 模块
+            System: {
+                getBrightness: function() { return Pimeier.invoke('System', 'getBrightness'); },
+                setBrightness: function(params) { return Pimeier.invoke('System', 'setBrightness', params); },
+                getVolume: function() { return Pimeier.invoke('System', 'getVolume'); },
+                setVolume: function(params) { return Pimeier.invoke('System', 'setVolume', params); }
             }
         };
         log("🚀 [JS SDK] Pimeier Native Bridge Ready");

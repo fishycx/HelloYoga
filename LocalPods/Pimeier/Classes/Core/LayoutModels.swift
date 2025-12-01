@@ -37,6 +37,10 @@ public struct LayoutNode {
         case template // 模版定义节点
         case custom // 自定义组件
         
+        // 新增 UI 组件
+        case switch_ // Switch 开关（使用 switch_ 避免与 Swift 关键字冲突）
+        case slider // Slider 滑块
+        
         // 已废弃的类型，保留枚举 case 但不处理，或者直接移除
         case refreshView
         case loadMoreView
@@ -305,6 +309,19 @@ public struct ViewStyle {
     public var placeholderColor: UIColor?
     public var borderStyle: UITextField.BorderStyle?
     
+    // Switch 属性
+    public var switchValue: Bool?
+    public var onTintColor: UIColor?
+    public var thumbTintColor: UIColor?
+    
+    // Slider 属性
+    public var sliderValue: Float?
+    public var minimumValue: Float?
+    public var maximumValue: Float?
+    public var minimumTrackTintColor: UIColor?
+    public var maximumTrackTintColor: UIColor?
+    public var thumbTintColorSlider: UIColor? // 为 Slider 单独命名，避免与 Switch 冲突
+    
     // 数据绑定 ID
     public var dataId: String?
     
@@ -361,6 +378,31 @@ public struct ViewStyle {
                 style.placeholderColor = parseColor(value)
             case "borderstyle":
                 style.borderStyle = parseBorderStyle(value)
+                
+            // Switch 属性
+            case "value":
+                // value 可以是布尔值（Switch）或浮点数（Slider）
+                if let boolValue = parseBool(value) {
+                    style.switchValue = boolValue
+                } else if let floatValue = Float(value) {
+                    style.sliderValue = floatValue
+                }
+            case "ontintcolor":
+                style.onTintColor = parseColor(value)
+            case "thumbtintcolor":
+                style.thumbTintColor = parseColor(value)
+                
+            // Slider 属性
+            case "minimumvalue", "minvalue":
+                style.minimumValue = Float(value)
+            case "maximumvalue", "maxvalue":
+                style.maximumValue = Float(value)
+            case "minimumtracktintcolor":
+                style.minimumTrackTintColor = parseColor(value)
+            case "maximumtracktintcolor":
+                style.maximumTrackTintColor = parseColor(value)
+            case "thumbtintcolorslider":
+                style.thumbTintColorSlider = parseColor(value)
                 
             // 数据绑定
             case "id", "dataid":
@@ -482,6 +524,15 @@ public struct ViewStyle {
         case "bezel": return .bezel
         case "roundedrect", "rounded": return .roundedRect
         default: return .roundedRect
+        }
+    }
+    
+    private static func parseBool(_ value: String) -> Bool? {
+        let lowercased = value.lowercased()
+        switch lowercased {
+        case "true", "1", "yes", "on": return true
+        case "false", "0", "no", "off": return false
+        default: return nil
         }
     }
 }

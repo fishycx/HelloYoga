@@ -83,6 +83,11 @@ public class XMLLayoutParser: NSObject {
             return "loadMoreView"
         } else if lowercased == "textfield" || lowercased == "edittext" {
             return "input"
+        } else if lowercased == "switch" {
+            // switch 是 Swift 关键字，在 NodeType 中使用 switch_，但 XML 中可以使用 switch
+            return "switch_"
+        } else if lowercased == "slider" {
+            return "slider"
         }
         
         // 其他情况使用全小写

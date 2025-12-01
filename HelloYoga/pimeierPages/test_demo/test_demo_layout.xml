@@ -104,11 +104,46 @@
                     text="{{ item.title }}" 
                     fontSize="16" 
                     color="#333333"/>
-                <text 
-                    text="{{ item.switchValue ? 'ON' : 'OFF' }}" 
-                    fontSize="14" 
-                    color="{{ item.switchValue ? '#34C759' : '#8E8E93' }}"
-                    marginRight="10"/>
+                <switch 
+                    value="{{ item.switchValue }}"
+                    onTintColor="#34C759"
+                    onChange="onSwitchChange(item.id, value)"
+                    width="51"
+                    height="31"/>
+            </view>
+        </template>
+        
+        <!-- 模板 7: Slider (滑块样式, 高度 60) -->
+        <template type="slider">
+            <view 
+                width="100%" 
+                height="60" 
+                backgroundColor="white" 
+                cornerRadius="12"
+                flexDirection="column"
+                justifyContent="center"
+                paddingLeft="15"
+                paddingRight="15">
+                <view flexDirection="row" justifyContent="spaceBetween" alignItems="center" marginBottom="8">
+                    <text 
+                        text="{{ item.title }}" 
+                        fontSize="16" 
+                        color="#333333"/>
+                    <text 
+                        text="{{ Math.round(item.sliderValue) }}" 
+                        fontSize="14" 
+                        fontWeight="bold"
+                        color="#007AFF"/>
+                </view>
+                <slider 
+                    value="{{ item.sliderValue }}"
+                    minimumValue="0"
+                    maximumValue="100"
+                    minimumTrackTintColor="#007AFF"
+                    maximumTrackTintColor="#E0E0E0"
+                    onChange="onSliderChange(item.id, value)"
+                    width="100%"
+                    height="31"/>
             </view>
         </template>
         

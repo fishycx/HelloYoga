@@ -267,6 +267,26 @@ public class PimeierListView: UICollectionView, PimeierComponent, UICollectionVi
                         renderedView.frame = cell.contentView.bounds
                         renderedView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
                         
+                        // 确保 contentView 不会拦截触摸事件（对于交互式控件很重要）
+                        cell.contentView.isUserInteractionEnabled = true
+                        
+                        // 确保所有交互式控件可以接收触摸事件
+                        func enableInteractionForControls(in view: UIView) {
+                            if view is UISwitch || view is UISlider || view is UIButton || view is UITextField {
+                                view.isUserInteractionEnabled = true
+                                // 确保父视图不会拦截触摸
+                                var parent = view.superview
+                                while parent != nil && parent != cell.contentView {
+                                    parent?.isUserInteractionEnabled = true
+                                    parent = parent?.superview
+                                }
+                            }
+                            for subview in view.subviews {
+                                enableInteractionForControls(in: subview)
+                            }
+                        }
+                        enableInteractionForControls(in: renderedView)
+                        
                         // 强制布局
                         cell.contentView.setNeedsLayout()
                         cell.contentView.layoutIfNeeded()
@@ -433,6 +453,67 @@ public class PimeierListView: UICollectionView, PimeierComponent, UICollectionVi
     
     // MARK: - UICollectionViewDelegate
     
+    // 检查点击位置是否在交互式控件上（如 Switch、Slider、Button 等）
+    private func isPointOnInteractiveControl(_ point: CGPoint, in cell: UICollectionViewCell) -> Bool {
+        // 使用 hitTest 来查找点击位置下的视图
+        let hitView = cell.contentView.hitTest(point, with: nil)
+        
+        // 递归向上查找，看是否命中交互式控件
+        var currentView: UIView? = hitView
+        while let view = currentView {
+            // 如果是交互式控件，返回 true
+            if view is UISwitch || view is UISlider || view is UIButton || view is UITextField {
+                print("✅ [ListView] 检测到交互式控件: \(type(of: view))")
+                return true
+            }
+            // 如果已经到达 cell 的 contentView，停止查找
+            if view == cell.contentView {
+                break
+            }
+            currentView = view.superview
+        }
+        
+        return false
+    }
+    
+    // 在 cell 被选中之前检查是否应该允许选择
+    public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool {
+        // 获取当前触摸位置
+        guard let cell = collectionView.cellForItem(at: indexPath) else {
+            return true
+        }
+        
+        // 尝试从手势识别器获取触摸位置
+        var touchPoint: CGPoint?
+        
+        // 方法1: 从 pan gesture 获取
+        let panGesture = collectionView.panGestureRecognizer
+        if panGesture.state != .possible {
+            touchPoint = panGesture.location(in: cell)
+        }
+        
+        // 方法2: 从 tap gesture 获取（如果有）
+        if touchPoint == nil {
+            for gesture in collectionView.gestureRecognizers ?? [] {
+                if let tapGesture = gesture as? UITapGestureRecognizer,
+                   tapGesture.state != .possible {
+                    touchPoint = tapGesture.location(in: cell)
+                    break
+                }
+            }
+        }
+        
+        // 如果找到了触摸位置，检查是否在交互式控件上
+        if let point = touchPoint {
+            if isPointOnInteractiveControl(point, in: cell) {
+                print("🚫 [ListView] 点击位置在交互式控件上，不触发 cell 选择")
+                return false
+            }
+        }
+        
+        return true
+    }
+    
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard let item = diffableDataSource.itemIdentifier(for: indexPath),
               let script = onItemClickScript,
@@ -447,6 +528,9 @@ public class PimeierListView: UICollectionView, PimeierComponent, UICollectionVi
             
             _ = renderer.evaluateExpression(script, with: jsContext)
         }
+        
+        // 取消选择，避免高亮状态
+        collectionView.deselectItem(at: indexPath, animated: true)
     }
     
     // MARK: - UICollectionViewDelegateFlowLayout

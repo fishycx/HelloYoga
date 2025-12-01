@@ -26,12 +26,26 @@
         {
             "templateType": "switch",
             "title": "启用通知",
-            "switchValue": true
+            "switchValue": true,
+            "id": "switch_notification"
         },
         {
             "templateType": "switch",
             "title": "自动同步",
-            "switchValue": false
+            "switchValue": false,
+            "id": "switch_auto_sync"
+        },
+        {
+            "templateType": "slider",
+            "title": "🔊 音量调节",
+            "sliderValue": 50,
+            "id": "slider_volume"
+        },
+        {
+            "templateType": "slider",
+            "title": "💡 亮度调节",
+            "sliderValue": 75,
+            "id": "slider_brightness"
         },
         {
             "templateType": "large",

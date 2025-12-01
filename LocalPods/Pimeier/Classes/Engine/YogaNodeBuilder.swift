@@ -312,6 +312,14 @@ public class YogaNodeBuilder {
             textField.borderStyle = .roundedRect
             view = textField
             
+        case .switch_:
+            let switchControl = UISwitch()
+            view = switchControl
+            
+        case .slider:
+            let slider = UISlider()
+            view = slider
+            
         case .scrollView:
             let scrollView = UIScrollView()
             scrollView.isScrollEnabled = true
@@ -591,6 +599,45 @@ public class YogaNodeBuilder {
             }
             if let textAlignment = style.textAlignment {
                 textField.textAlignment = textAlignment
+            }
+        }
+        
+        // Switch 样式
+        if let switchControl = view as? UISwitch {
+            // 确保 Switch 可以交互
+            switchControl.isUserInteractionEnabled = true
+            if let value = style.switchValue {
+                switchControl.isOn = value
+            }
+            if let onTintColor = style.onTintColor {
+                switchControl.onTintColor = onTintColor
+            }
+            if let thumbTintColor = style.thumbTintColor {
+                switchControl.thumbTintColor = thumbTintColor
+            }
+        }
+        
+        // Slider 样式
+        if let slider = view as? UISlider {
+            // 确保 Slider 可以交互
+            slider.isUserInteractionEnabled = true
+            if let value = style.sliderValue {
+                slider.value = value
+            }
+            if let minimumValue = style.minimumValue {
+                slider.minimumValue = minimumValue
+            }
+            if let maximumValue = style.maximumValue {
+                slider.maximumValue = maximumValue
+            }
+            if let minimumTrackTintColor = style.minimumTrackTintColor {
+                slider.minimumTrackTintColor = minimumTrackTintColor
+            }
+            if let maximumTrackTintColor = style.maximumTrackTintColor {
+                slider.maximumTrackTintColor = maximumTrackTintColor
+            }
+            if let thumbTintColor = style.thumbTintColorSlider {
+                slider.thumbTintColor = thumbTintColor
             }
         }
         
