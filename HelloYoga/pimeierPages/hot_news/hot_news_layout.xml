@@ -47,43 +47,43 @@
             <text 
                 text="全部"
                 fontSize="15"
-                fontWeight="bold"
-                color="#FF6B35"
+                fontWeight="{{ viewModel.currentCategory === 'all' ? 'bold' : 'regular' }}"
+                color="{{ viewModel.currentCategory === 'all' ? '#FF6B35' : '#666666' }}"
                 marginRight="20"
                 onClick="switchCategory('all')"/>
             <text 
                 text="科技"
                 fontSize="15"
-                fontWeight="regular"
-                color="#666666"
+                fontWeight="{{ viewModel.currentCategory === 'tech' ? 'bold' : 'regular' }}"
+                color="{{ viewModel.currentCategory === 'tech' ? '#FF6B35' : '#666666' }}"
                 marginRight="20"
                 onClick="switchCategory('tech')"/>
             <text 
                 text="娱乐"
                 fontSize="15"
-                fontWeight="regular"
-                color="#666666"
+                fontWeight="{{ viewModel.currentCategory === 'entertainment' ? 'bold' : 'regular' }}"
+                color="{{ viewModel.currentCategory === 'entertainment' ? '#FF6B35' : '#666666' }}"
                 marginRight="20"
                 onClick="switchCategory('entertainment')"/>
             <text 
                 text="体育"
                 fontSize="15"
-                fontWeight="regular"
-                color="#666666"
+                fontWeight="{{ viewModel.currentCategory === 'sports' ? 'bold' : 'regular' }}"
+                color="{{ viewModel.currentCategory === 'sports' ? '#FF6B35' : '#666666' }}"
                 marginRight="20"
                 onClick="switchCategory('sports')"/>
             <text 
                 text="财经"
                 fontSize="15"
-                fontWeight="regular"
-                color="#666666"
+                fontWeight="{{ viewModel.currentCategory === 'finance' ? 'bold' : 'regular' }}"
+                color="{{ viewModel.currentCategory === 'finance' ? '#FF6B35' : '#666666' }}"
                 marginRight="20"
                 onClick="switchCategory('finance')"/>
             <text 
                 text="社会"
                 fontSize="15"
-                fontWeight="regular"
-                color="#666666"
+                fontWeight="{{ viewModel.currentCategory === 'society' ? 'bold' : 'regular' }}"
+                color="{{ viewModel.currentCategory === 'society' ? '#FF6B35' : '#666666' }}"
                 onClick="switchCategory('society')"/>
         </view>
     </view>
