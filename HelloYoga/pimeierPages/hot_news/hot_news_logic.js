@@ -40,9 +40,20 @@ function loadNews(categoryId) {
     .then(function(response) {
         log("API响应: " + JSON.stringify(response));
         
-        if (response.data && response.data.data && Array.isArray(response.data.data)) {
-            // API返回格式: { data: { data: [...], success: true, total: 100 } }
-            var newsList = formatNewsData(response.data.data);
+        // NetworkModule 返回格式: { statusCode: 200, data: {...}, headers: {...} }
+        // API 实际返回格式: { data: [...], success: true, total: 100 }
+        // 所以访问路径是: response.data.data
+        var apiData = response.data;
+        
+        log("API数据检查:");
+        log("response.data 类型: " + typeof apiData);
+        log("response.data.data 是否存在: " + (apiData && apiData.data !== undefined));
+        log("response.data.data 是否为数组: " + (apiData && Array.isArray(apiData.data)));
+        
+        if (apiData && apiData.data && Array.isArray(apiData.data)) {
+            // API返回格式: { data: [...], success: true, total: 100 }
+            log("开始格式化数据，数组长度: " + apiData.data.length);
+            var newsList = formatNewsData(apiData.data);
             if (!viewModel.newsList) {
                 viewModel.newsList = [];
             }
