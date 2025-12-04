@@ -73,6 +73,33 @@
             "templateType": "button",
             "title": "刷新数据",
             "onClick": "onRefresh()"
+        },
+        {
+            "templateType": "button",
+            "title": "🌐 测试 GET 请求",
+            "onClick": "testNetworkRequest()"
+        },
+        {
+            "templateType": "button",
+            "title": "📤 测试 POST 请求",
+            "onClick": "testNetworkPost()"
+        },
+        {
+            "templateType": "button",
+            "title": "⬇️ 测试文件下载",
+            "onClick": "testNetworkDownload()"
+        },
+        {
+            "templateType": "image",
+            "title": "网络图片示例",
+            "imageURL": "https://picsum.photos/400/300?random=1",
+            "imageName": ""
+        },
+        {
+            "templateType": "image",
+            "title": "本地图片示例（如果有）",
+            "imageURL": "",
+            "imageName": "AppIcon"
         }
     ]
 }

@@ -129,6 +129,17 @@ public class PimeierJSEngine {
                 setBrightness: function(params) { return Pimeier.invoke('System', 'setBrightness', params); },
                 getVolume: function() { return Pimeier.invoke('System', 'getVolume'); },
                 setVolume: function(params) { return Pimeier.invoke('System', 'setVolume', params); }
+            },
+            
+            // Network 模块
+            Network: {
+                request: function(params) { return Pimeier.invoke('Network', 'request', params); },
+                get: function(params) { return Pimeier.invoke('Network', 'get', params); },
+                post: function(params) { return Pimeier.invoke('Network', 'post', params); },
+                put: function(params) { return Pimeier.invoke('Network', 'put', params); },
+                delete: function(params) { return Pimeier.invoke('Network', 'delete', params); },
+                upload: function(params) { return Pimeier.invoke('Network', 'upload', params); },
+                download: function(params) { return Pimeier.invoke('Network', 'download', params); }
             }
         };
         log("🚀 [JS SDK] Pimeier Native Bridge Ready");

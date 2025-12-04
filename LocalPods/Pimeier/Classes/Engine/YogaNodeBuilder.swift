@@ -563,16 +563,6 @@ public class YogaNodeBuilder {
             }
         }
         
-        // 图片样式
-        if let imageView = view as? UIImageView {
-            if let imageName = style.imageName {
-                imageView.image = UIImage(named: imageName)
-            }
-            if let contentMode = style.contentMode {
-                imageView.contentMode = contentMode
-            }
-        }
-        
         // 输入框样式
         if let textField = view as? UITextField {
             if let placeholder = style.placeholder {
@@ -641,9 +631,90 @@ public class YogaNodeBuilder {
             }
         }
         
+        // 图片样式
+        if let imageView = view as? UIImageView {
+            // 优先处理 imageURL（网络图片）
+            if let imageURLString = style.imageURL, !imageURLString.isEmpty, imageURLString != "undefined" {
+                // 如果有 imageName 且不为空，作为占位图
+                let placeholder = (style.imageName?.isEmpty == false && style.imageName != "undefined") ? style.imageName : nil
+                loadImage(from: imageURLString, into: imageView, placeholder: placeholder)
+            } else if let imageName = style.imageName, !imageName.isEmpty, imageName != "undefined" {
+                // 本地图片
+                imageView.image = UIImage(named: imageName)
+            }
+            if let contentMode = style.contentMode {
+                imageView.contentMode = contentMode
+            }
+        }
+        
         // 保存数据 ID
         if let dataId = style.dataId {
             view.accessibilityIdentifier = dataId
         }
     }
+    
+    // MARK: - Image Loading
+    
+    /// 加载图片（支持网络和本地）
+    /// - Parameters:
+    ///   - urlString: 图片 URL 字符串（网络）或图片名称（本地）
+    ///   - imageView: 目标 UIImageView
+    ///   - placeholder: 占位图名称（可选）
+    private func loadImage(from urlString: String, into imageView: UIImageView, placeholder: String?) {
+        // 设置占位图
+        if let placeholderName = placeholder, !placeholderName.isEmpty {
+            imageView.image = UIImage(named: placeholderName)
+        }
+        
+        // 判断是网络 URL 还是本地图片名称
+        if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
+            // 网络图片
+            loadNetworkImage(from: urlString, into: imageView)
+        } else {
+            // 本地图片（如果 imageURL 不是 URL，则作为本地图片名称处理）
+            imageView.image = UIImage(named: urlString)
+        }
+    }
+    
+    /// 加载网络图片
+    /// - Parameters:
+    ///   - urlString: 图片 URL
+    ///   - imageView: 目标 UIImageView
+    private func loadNetworkImage(from urlString: String, into imageView: UIImageView) {
+        guard let url = URL(string: urlString) else {
+            print("⚠️ [ImageLoader] 无效的图片 URL: \(urlString)")
+            return
+        }
+        
+        // 使用 URLSession 加载图片
+        let task = URLSession.shared.dataTask(with: url) { [weak imageView] data, response, error in
+            DispatchQueue.main.async {
+                guard let imageView = imageView else { return }
+                
+                if let error = error {
+                    print("❌ [ImageLoader] 加载图片失败: \(urlString), 错误: \(error.localizedDescription)")
+                    // 可以在这里设置错误占位图
+                    return
+                }
+                
+                guard let data = data, let image = UIImage(data: data) else {
+                    print("⚠️ [ImageLoader] 无法解析图片数据: \(urlString)")
+                    return
+                }
+                
+                imageView.image = image
+                print("✅ [ImageLoader] 图片加载成功: \(urlString)")
+            }
+        }
+        
+        task.resume()
+        
+        // 保存 task 引用，防止在视图释放前被取消
+        // 使用 Associated Object 存储 task
+        objc_setAssociatedObject(imageView, &ImageTaskKey, task, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+    }
 }
+
+// MARK: - Associated Object Keys
+
+private var ImageTaskKey: UInt8 = 0

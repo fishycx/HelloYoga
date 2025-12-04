@@ -172,3 +172,72 @@ function onSliderChange(id, value) {
     // 如果需要更新显示的数值文本，可以在这里调用 render()
     // 但对于 Slider 这种频繁交互的控件，通常不需要立即重新渲染整个页面
 }
+
+// 网络请求示例函数
+function testNetworkRequest() {
+    log("开始测试网络请求...");
+    
+    // 示例 1: GET 请求
+    Pimeier.Network.get({
+        url: "https://jsonplaceholder.typicode.com/posts/1",
+        timeout: 10
+    })
+    .then(function(response) {
+        log("GET 请求成功:");
+        log("状态码: " + response.statusCode);
+        log("数据: " + JSON.stringify(response.data));
+        Pimeier.Toast.show("GET 请求成功！");
+    })
+    .catch(function(error) {
+        log("GET 请求失败: " + error);
+        Pimeier.Toast.show("GET 请求失败: " + error);
+    });
+}
+
+function testNetworkPost() {
+    log("开始测试 POST 请求...");
+    
+    // 示例 2: POST 请求
+    Pimeier.Network.post({
+        url: "https://jsonplaceholder.typicode.com/posts",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: {
+            title: "测试标题",
+            body: "测试内容",
+            userId: 1
+        },
+        timeout: 10
+    })
+    .then(function(response) {
+        log("POST 请求成功:");
+        log("状态码: " + response.statusCode);
+        log("数据: " + JSON.stringify(response.data));
+        Pimeier.Toast.show("POST 请求成功！");
+    })
+    .catch(function(error) {
+        log("POST 请求失败: " + error);
+        Pimeier.Toast.show("POST 请求失败: " + error);
+    });
+}
+
+function testNetworkDownload() {
+    log("开始测试文件下载...");
+    
+    // 示例 3: 文件下载
+    Pimeier.Network.download({
+        url: "https://picsum.photos/400/300?random=1",
+        savePath: "downloads/test_image.jpg",
+        timeout: 30
+    })
+    .then(function(response) {
+        log("文件下载成功:");
+        log("保存路径: " + response.filePath);
+        Pimeier.Toast.show("文件下载成功！");
+    })
+    .catch(function(error) {
+        log("文件下载失败: " + error);
+        Pimeier.Toast.show("文件下载失败: " + error);
+    });
+}
