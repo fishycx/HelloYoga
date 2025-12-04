@@ -140,8 +140,30 @@ public class PimeierRenderer {
         // 3.1 解析属性中的表达式 {{ ... }}
         var resolvedAttributes = node.attributes
         print("🔍 [Renderer] buildNode type=\(node.type.rawValue), original attributes: \(node.attributes.keys)")
+        
+        // 对于自定义组件（如 list-view），某些属性（如 dataSource）需要保留原始表达式字符串
+        // 而不是解析后的值，因为这些属性会在组件内部动态解析
+        let skipExpressionKeys: Set<String> = ["datasource", "data"] // 不解析这些属性
+        
         for (key, value) in node.attributes {
-            resolvedAttributes[key] = resolveString(value, context: context)
+            if node.type == .custom && skipExpressionKeys.contains(key.lowercased()) {
+                // 对于 dataSource/data 属性，提取表达式内容但不解析
+                // 例如：{{ viewModel.newsList }} -> viewModel.newsList
+                let pattern = "^\\{\\{(.+?)\\}\\}$"
+                if let regex = try? NSRegularExpression(pattern: pattern, options: []),
+                   let match = regex.firstMatch(in: value, options: [], range: NSRange(location: 0, length: value.utf16.count)),
+                   let range = Range(match.range(at: 1), in: value) {
+                    let expression = String(value[range]).trimmingCharacters(in: .whitespaces)
+                    resolvedAttributes[key] = expression
+                    print("🔍 [Renderer] 保留表达式字符串: \(key) = '\(expression)'")
+                } else {
+                    // 如果不是 {{ }} 格式，直接使用原值
+                    resolvedAttributes[key] = value
+                }
+            } else {
+                // 其他属性正常解析表达式
+                resolvedAttributes[key] = resolveString(value, context: context)
+            }
         }
         print("🔍 [Renderer] buildNode resolved attributes: \(resolvedAttributes.keys)")
         
