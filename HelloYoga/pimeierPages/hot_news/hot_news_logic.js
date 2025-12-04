@@ -171,16 +171,23 @@ function formatNewsData(apiData) {
         // 判断是否有图片（可以根据平台或标题判断，或者API后续可能返回图片URL）
         var hasImage = false; // 当前API没有图片字段，后续如果有可以改为 item.image || item.imageUrl
         
+        // 确保所有字段都有默认值，避免 undefined 导致的错误
+        var rank = (item.rank !== undefined && item.rank !== null) ? Number(item.rank) : (i + 1);
+        var platform = item.platform || "unknown";
+        var title = item.title || "无标题";
+        var source = item.platform_name || item.platform || "未知来源";
+        var timestamp = item.timestamp || "";
+        
         var news = {
-            id: item.id || item.rank + "_" + item.platform + "_" + i, // 使用 rank + platform + index 作为唯一ID
+            id: item.id || (String(rank) + "_" + platform + "_" + i), // 使用 rank + platform + index 作为唯一ID
             templateType: hasImage ? "news" : "news_text",
-            title: item.title || "无标题",
-            source: item.platform_name || item.platform || "未知来源",
-            time: formatTimeFromString(item.timestamp), // 格式化时间戳字符串
-            hot: item.rank <= 3, // 排名前3的标记为热点
+            title: title,
+            source: source,
+            time: formatTimeFromString(timestamp), // 格式化时间戳字符串
+            hot: rank <= 3, // 排名前3的标记为热点
             url: item.url || item.link || "", // 如果API后续返回URL
-            rank: item.rank || (i + 1), // 保存排名信息
-            platform: item.platform || "" // 保存平台信息
+            rank: rank, // 保存排名信息（确保是数字）
+            platform: platform // 保存平台信息
         };
         
         // 如果有图片URL，添加图片

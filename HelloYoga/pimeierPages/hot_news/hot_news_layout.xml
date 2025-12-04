@@ -135,7 +135,8 @@
                             text="{{ item.hot ? '🔥' : '' }}"
                             fontSize="12"/>
                         <text 
-                            text="{{ item.rank ? '#' + item.rank : '' }}"
+                            if="{{ item.rank && item.rank > 0 }}"
+                            text="{{ '#' + String(item.rank) }}"
                             fontSize="12"
                             color="#FF6B35"
                             fontWeight="bold"
