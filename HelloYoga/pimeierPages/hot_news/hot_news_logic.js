@@ -12,6 +12,9 @@ function loadNews(categoryId) {
     
     // 显示加载状态
     viewModel.isRefreshing = true;
+    if (!viewModel.newsList) {
+        viewModel.newsList = [];
+    }
     viewModel.newsList = [
         {
             templateType: "loading"
@@ -19,12 +22,7 @@ function loadNews(categoryId) {
     ];
     render();
     
-    // 更新分类状态
-    if (viewModel.categories) {
-        for (var i = 0; i < viewModel.categories.length; i++) {
-            viewModel.categories[i].active = (viewModel.categories[i].id === categoryId);
-        }
-    }
+    // 更新分类状态（通过重新渲染时更新分类文本样式）
     viewModel.currentCategory = categoryId;
     
     // 模拟API调用 - 实际项目中替换为真实API
@@ -32,6 +30,9 @@ function loadNews(categoryId) {
     setTimeout(function() {
         // 模拟数据
         var mockNews = generateMockNews(categoryId);
+        if (!viewModel.newsList) {
+            viewModel.newsList = [];
+        }
         viewModel.newsList = mockNews;
         viewModel.isRefreshing = false;
         viewModel.updateTime = getCurrentTime();

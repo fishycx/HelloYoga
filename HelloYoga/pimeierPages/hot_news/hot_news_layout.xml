@@ -41,19 +41,50 @@
         <view 
             flexGrow="1"
             flexDirection="row"
-            alignItems="center">
-            <view 
-                for="{{ category in viewModel.categories }}"
-                flexDirection="row"
-                alignItems="center"
-                marginRight="20">
-                <text 
-                    text="{{ category.name }}"
-                    fontSize="15"
-                    fontWeight="{{ category.active ? 'bold' : 'regular' }}"
-                    color="{{ category.active ? '#FF6B35' : '#666666' }}"
-                    onClick="switchCategory(category.id)"/>
-            </view>
+            alignItems="center"
+            paddingLeft="15"
+            paddingRight="15">
+            <text 
+                text="全部"
+                fontSize="15"
+                fontWeight="bold"
+                color="#FF6B35"
+                marginRight="20"
+                onClick="switchCategory('all')"/>
+            <text 
+                text="科技"
+                fontSize="15"
+                fontWeight="regular"
+                color="#666666"
+                marginRight="20"
+                onClick="switchCategory('tech')"/>
+            <text 
+                text="娱乐"
+                fontSize="15"
+                fontWeight="regular"
+                color="#666666"
+                marginRight="20"
+                onClick="switchCategory('entertainment')"/>
+            <text 
+                text="体育"
+                fontSize="15"
+                fontWeight="regular"
+                color="#666666"
+                marginRight="20"
+                onClick="switchCategory('sports')"/>
+            <text 
+                text="财经"
+                fontSize="15"
+                fontWeight="regular"
+                color="#666666"
+                marginRight="20"
+                onClick="switchCategory('finance')"/>
+            <text 
+                text="社会"
+                fontSize="15"
+                fontWeight="regular"
+                color="#666666"
+                onClick="switchCategory('society')"/>
         </view>
     </view>
     
