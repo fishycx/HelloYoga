@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 热榜新闻页面 -->
+<container 
+    flexDirection="column" 
+    width="100%" 
+    height="100%" 
+    backgroundColor="systemBackground">
+    
+    <!-- 顶部导航栏 -->
+    <view 
+        height="122" 
+        backgroundColor="#FF6B35" 
+        flexDirection="row" 
+        alignItems="flexEnd" 
+        paddingBottom="12"
+        paddingLeft="20"
+        paddingRight="20">
+        <text 
+            text="{{ viewModel.navTitle }}"
+            fontSize="22"
+            fontWeight="bold"
+            color="white"/>
+        <view flexGrow="1"/>
+        <text 
+            text="{{ viewModel.updateTime }}"
+            fontSize="12"
+            color="white"
+            opacity="0.8"/>
+    </view>
+    
+    <!-- 分类标签栏 -->
+    <view 
+        height="50"
+        backgroundColor="white"
+        flexDirection="row"
+        alignItems="center"
+        paddingLeft="15"
+        paddingRight="15"
+        borderWidth="0.5"
+        borderColor="#E0E0E0">
+        <view 
+            flexGrow="1"
+            flexDirection="row"
+            alignItems="center">
+            <view 
+                for="{{ category in viewModel.categories }}"
+                flexDirection="row"
+                alignItems="center"
+                marginRight="20">
+                <text 
+                    text="{{ category.name }}"
+                    fontSize="15"
+                    fontWeight="{{ category.active ? 'bold' : 'regular' }}"
+                    color="{{ category.active ? '#FF6B35' : '#666666' }}"
+                    onClick="switchCategory(category.id)"/>
+            </view>
+        </view>
+    </view>
+    
+    <!-- 主内容区域 - 新闻列表 -->
+    <list-view 
+        dataSource="{{ viewModel.newsList }}"
+        flexGrow="1"
+        width="100%"
+        backgroundColor="#F5F5F5"
+        padding="10"
+        paddingTop="10"
+        paddingBottom="10">
+        
+        <!-- 模板 1: 标准新闻卡片 (带图片) -->
+        <template type="news">
+            <view 
+                width="100%" 
+                height="120" 
+                backgroundColor="white" 
+                cornerRadius="12"
+                flexDirection="row"
+                padding="12"
+                marginBottom="10"
+                onClick="openNewsDetail(item.id)">
+                <!-- 左侧内容 -->
+                <view flexGrow="1" flexDirection="column" justifyContent="spaceBetween" marginRight="10">
+                    <text 
+                        text="{{ item.title }}" 
+                        fontSize="16" 
+                        fontWeight="bold" 
+                        color="#333333"
+                        numberOfLines="2"/>
+                    <view flexDirection="row" alignItems="center" marginTop="8">
+                        <text 
+                            text="{{ item.source }}"
+                            fontSize="12"
+                            color="#999999"/>
+                        <text 
+                            text=" · "
+                            fontSize="12"
+                            color="#E0E0E0"/>
+                        <text 
+                            text="{{ item.time }}"
+                            fontSize="12"
+                            color="#999999"/>
+                        <view flexGrow="1"/>
+                        <text 
+                            text="{{ item.hot ? '🔥' : '' }}"
+                            fontSize="12"/>
+                    </view>
+                </view>
+                <!-- 右侧图片 -->
+                <image 
+                    imageURL="{{ item.image }}"
+                    imageName=""
+                    width="100"
+                    height="96"
+                    contentMode="scaleAspectFill"
+                    cornerRadius="6"/>
+            </view>
+        </template>
+        
+        <!-- 模板 2: 纯文字新闻卡片 (无图片) -->
+        <template type="news_text">
+            <view 
+                width="100%" 
+                minHeight="80" 
+                backgroundColor="white" 
+                cornerRadius="12"
+                flexDirection="column"
+                padding="15"
+                marginBottom="10"
+                onClick="openNewsDetail(item.id)">
+                <text 
+                    text="{{ item.title }}" 
+                    fontSize="16" 
+                    fontWeight="bold" 
+                    color="#333333"
+                    numberOfLines="3"/>
+                <view flexDirection="row" alignItems="center" marginTop="10">
+                    <text 
+                        text="{{ item.source }}"
+                        fontSize="12"
+                        color="#999999"/>
+                    <text 
+                        text=" · "
+                        fontSize="12"
+                        color="#E0E0E0"/>
+                    <text 
+                        text="{{ item.time }}"
+                        fontSize="12"
+                        color="#999999"/>
+                    <view flexGrow="1"/>
+                    <text 
+                        text="{{ item.hot ? '🔥' : '' }}"
+                        fontSize="12"/>
+                </view>
+            </view>
+        </template>
+        
+        <!-- 模板 3: 加载中 -->
+        <template type="loading">
+            <view 
+                width="100%" 
+                height="60" 
+                backgroundColor="transparent"
+                justifyContent="center"
+                alignItems="center">
+                <text 
+                    text="加载中..."
+                    fontSize="14"
+                    color="#999999"/>
+            </view>
+        </template>
+        
+        <!-- 模板 4: 空状态 -->
+        <template type="empty">
+            <view 
+                width="100%" 
+                height="200" 
+                backgroundColor="transparent"
+                justifyContent="center"
+                alignItems="center">
+                <text 
+                    text="暂无新闻"
+                    fontSize="16"
+                    color="#999999"/>
+            </view>
+        </template>
+    </list-view>
+    
+    <!-- 底部刷新提示 -->
+    <view 
+        if="{{ viewModel.isRefreshing }}"
+        height="50"
+        backgroundColor="#F5F5F5"
+        justifyContent="center"
+        alignItems="center">
+        <text 
+            text="正在刷新..."
+            fontSize="14"
+            color="#999999"/>
+    </view>
+</container>
+

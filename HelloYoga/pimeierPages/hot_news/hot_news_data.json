@@ -1,0 +1,60 @@
+{
+  "navTitle": "🔥 全网热榜",
+  "updateTime": "刚刚更新",
+  "isRefreshing": false,
+  "currentCategory": "all",
+  "categories": [
+    {
+      "id": "all",
+      "name": "全部",
+      "active": true
+    },
+    {
+      "id": "tech",
+      "name": "科技",
+      "active": false
+    },
+    {
+      "id": "entertainment",
+      "name": "娱乐",
+      "active": false
+    },
+    {
+      "id": "sports",
+      "name": "体育",
+      "active": false
+    },
+    {
+      "id": "finance",
+      "name": "财经",
+      "active": false
+    },
+    {
+      "id": "society",
+      "name": "社会",
+      "active": false
+    }
+  ],
+  "newsList": [
+    {
+      "id": "1",
+      "templateType": "news",
+      "title": "示例新闻标题：这是一个带图片的新闻卡片示例",
+      "source": "示例来源",
+      "time": "2小时前",
+      "image": "https://picsum.photos/200/150?random=1",
+      "hot": true,
+      "url": "https://example.com/news/1"
+    },
+    {
+      "id": "2",
+      "templateType": "news_text",
+      "title": "示例新闻标题：这是一个纯文字的新闻卡片示例，没有图片",
+      "source": "示例来源",
+      "time": "3小时前",
+      "hot": false,
+      "url": "https://example.com/news/2"
+    }
+  ]
+}
+
