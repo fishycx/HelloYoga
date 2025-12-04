@@ -179,31 +179,45 @@ function formatNewsData(apiData) {
     for (var i = 0; i < apiData.length; i++) {
         var item = apiData[i];
         
+        // 确保 item 是对象，并且所有字段都是基本类型
+        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            log("跳过无效数据项: " + i);
+            continue;
+        }
+        
         // 判断是否有图片（可以根据平台或标题判断，或者API后续可能返回图片URL）
         var hasImage = false; // 当前API没有图片字段，后续如果有可以改为 item.image || item.imageUrl
         
         // 确保所有字段都有默认值，避免 undefined 导致的错误
+        // 使用安全的类型转换，确保都是基本类型
         var rank = (item.rank !== undefined && item.rank !== null) ? Number(item.rank) : (i + 1);
-        var platform = item.platform || "unknown";
-        var title = item.title || "无标题";
-        var source = item.platform_name || item.platform || "未知来源";
-        var timestamp = item.timestamp || "";
+        if (isNaN(rank) || rank <= 0) {
+            rank = i + 1;
+        }
         
+        var platform = (item.platform && typeof item.platform === 'string') ? item.platform : "unknown";
+        var title = (item.title && typeof item.title === 'string') ? item.title : "无标题";
+        var source = (item.platform_name && typeof item.platform_name === 'string') ? item.platform_name : 
+                     (item.platform && typeof item.platform === 'string') ? item.platform : "未知来源";
+        var timestamp = (item.timestamp && typeof item.timestamp === 'string') ? item.timestamp : "";
+        
+        // 构建新闻对象，确保所有字段都是基本类型
         var news = {
-            id: item.id || (String(rank) + "_" + platform + "_" + i), // 使用 rank + platform + index 作为唯一ID
+            id: (item.id && typeof item.id === 'string') ? item.id : (String(rank) + "_" + platform + "_" + i),
             templateType: hasImage ? "news" : "news_text",
-            title: title,
-            source: source,
-            time: formatTimeFromString(timestamp), // 格式化时间戳字符串
-            hot: rank <= 3, // 排名前3的标记为热点
-            url: item.url || item.link || "", // 如果API后续返回URL
-            rank: rank, // 保存排名信息（确保是数字）
-            platform: platform // 保存平台信息
+            title: String(title), // 确保是字符串
+            source: String(source), // 确保是字符串
+            time: String(formatTimeFromString(timestamp)), // 确保是字符串
+            hot: Boolean(rank <= 3), // 确保是布尔值
+            url: (item.url && typeof item.url === 'string') ? item.url : 
+                 (item.link && typeof item.link === 'string') ? item.link : "",
+            rank: Number(rank), // 确保是数字
+            platform: String(platform) // 确保是字符串
         };
         
         // 如果有图片URL，添加图片
-        if (item.image || item.imageUrl) {
-            news.image = item.image || item.imageUrl;
+        if ((item.image && typeof item.image === 'string') || (item.imageUrl && typeof item.imageUrl === 'string')) {
+            news.image = String(item.image || item.imageUrl);
             news.templateType = "news";
         }
         
