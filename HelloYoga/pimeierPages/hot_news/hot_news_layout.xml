@@ -134,6 +134,12 @@
                         <text 
                             text="{{ item.hot ? '🔥' : '' }}"
                             fontSize="12"/>
+                        <text 
+                            text="{{ item.rank ? '#' + item.rank : '' }}"
+                            fontSize="12"
+                            color="#FF6B35"
+                            fontWeight="bold"
+                            marginLeft="4"/>
                     </view>
                 </view>
                 <!-- 右侧图片 -->

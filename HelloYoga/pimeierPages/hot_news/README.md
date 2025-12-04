@@ -29,48 +29,56 @@ hot_news/
 
 ## API 集成
 
-当前使用模拟数据，实际项目中需要替换为真实API。
+✅ **已集成真实API**
 
-### 推荐API服务
+### API 信息
 
-1. **聚合数据** (https://www.juhe.cn/)
-   - 提供新闻API
-   - 需要注册获取API Key
+- **接口地址**: `http://localhost:5001/api/news/latest?limit=100`
+- **请求方法**: GET
+- **参数说明**:
+  - `limit`: 返回新闻数量（默认100）
 
-2. **天行数据** (https://www.tianapi.com/)
-   - 提供热点新闻API
-   - 免费额度有限
-
-3. **NewsAPI** (https://newsapi.org/)
-   - 国际新闻API
-   - 需要注册
-
-### 集成步骤
-
-1. 在 `hot_news_logic.js` 中找到 `loadNews()` 函数
-2. 取消注释真实API调用代码
-3. 替换API地址和参数
-4. 根据API响应格式调整 `formatNewsData()` 函数
-
-### API响应格式示例
+### API响应格式
 
 ```json
 {
-  "code": 200,
-  "data": {
-    "list": [
-      {
-        "id": "1",
-        "title": "新闻标题",
-        "source": "来源",
-        "time": 1234567890,
-        "image": "https://example.com/image.jpg",
-        "url": "https://example.com/news/1",
-        "hot": true
-      }
-    ]
-  }
+  "data": [
+    {
+      "platform": "toutiao",
+      "platform_name": "今日头条",
+      "rank": 1,
+      "timestamp": "2025-12-04 16:45:10",
+      "title": "新闻标题"
+    }
+  ],
+  "success": true,
+  "timestamp": "2025-12-04 16:51:19",
+  "total": 100
 }
+```
+
+### 数据字段说明
+
+- `platform`: 平台标识（如 "toutiao", "baidu"）
+- `platform_name`: 平台名称（显示为来源）
+- `rank`: 排名（用于判断热点，前3名标记为🔥）
+- `timestamp`: 时间戳字符串（格式: "YYYY-MM-DD HH:mm:ss"）
+- `title`: 新闻标题
+
+### 数据映射
+
+API数据会自动映射到视图模型：
+- `platform_name` → `source`（来源）
+- `timestamp` → `time`（格式化后的相对时间）
+- `rank <= 3` → `hot`（热点标记）
+- `title` → `title`（标题）
+
+### 配置说明
+
+如需修改API地址，编辑 `hot_news_logic.js` 中的 `apiUrl` 变量：
+
+```javascript
+var apiUrl = "http://localhost:5001/api/news/latest?limit=100";
 ```
 
 ## 待实现功能
