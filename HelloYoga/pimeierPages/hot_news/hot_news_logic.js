@@ -26,12 +26,17 @@ function loadNews(categoryId) {
     viewModel.currentCategory = categoryId;
     
     // 调用真实API
-    var apiUrl = "http://localhost:5001/api/news/latest?limit=100";
+    // 注意：在 iOS 真机上，localhost 指向设备本身，需要使用开发机器的 IP 地址
+    // 在模拟器上可以使用 localhost，在真机上需要替换为实际 IP
+    // 例如：http://192.168.1.100:5001/api/news/latest
+    var apiUrl = "http://localhost:5001/api/news/latest";
     
     // 如果分类不是"all"，可以添加分类参数（如果API支持）
     // if (categoryId !== "all") {
     //     apiUrl += "&category=" + categoryId;
     // }
+    
+    log("开始请求API: " + apiUrl);
     
     Pimeier.Network.get({
         url: apiUrl,
@@ -76,13 +81,26 @@ function loadNews(categoryId) {
     })
     .catch(function(error) {
         log("加载新闻失败: " + error);
+        log("错误详情: " + JSON.stringify(error));
+        
         if (!viewModel.newsList) {
             viewModel.newsList = [];
         }
-        viewModel.newsList = [{ templateType: "empty" }];
+        
+        // 检查是否是连接错误
+        var errorMsg = error;
+        if (error && error.indexOf("Could not connect") !== -1) {
+            errorMsg = "无法连接到服务器\n请检查：\n1. 服务器是否运行在 localhost:5001\n2. 真机需要使用开发机器 IP 地址\n3. 网络连接是否正常";
+        } else if (error && error.indexOf("timeout") !== -1) {
+            errorMsg = "请求超时，请检查网络连接";
+        }
+        
+        viewModel.newsList = [{
+            templateType: "empty"
+        }];
         viewModel.isRefreshing = false;
         render();
-        Pimeier.Toast.show("加载失败: " + error);
+        Pimeier.Toast.show(errorMsg);
     });
 }
 
