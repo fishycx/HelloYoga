@@ -29,7 +29,7 @@ function loadNews(categoryId) {
     // 注意：在 iOS 真机上，localhost 指向设备本身，需要使用开发机器的 IP 地址
     // 在模拟器上可以使用 localhost，在真机上需要替换为实际 IP
     // 例如：http://192.168.1.100:5001/api/news/latest
-    var apiUrl = "http://localhost:5001/api/news/latest";
+    var apiUrl = "http://10.23.204.224:5001/api/news/latest";
     
     // 如果分类不是"all"，可以添加分类参数（如果API支持）
     // if (categoryId !== "all") {
@@ -128,11 +128,22 @@ function openNewsDetail(newsId) {
         }
     }
     
-    if (news && news.url) {
-        // 实际项目中可以打开详情页或浏览器
-        Pimeier.Toast.show("打开新闻: " + news.title);
-        // 这里可以调用 Native Bridge 打开浏览器或详情页
-        // Pimeier.Browser.open(news.url);
+    if (news) {
+        // 跳转到新闻详情页，传递新闻数据
+        Pimeier.Navigation.pushPage({
+            pageId: "news_detail",
+            params: {
+                newsId: news.id,
+                news: news  // 传递完整的新闻对象
+            }
+        })
+        .then(function() {
+            log("跳转成功");
+        })
+        .catch(function(error) {
+            log("跳转失败: " + error);
+            Pimeier.Toast.show("无法打开新闻详情: " + error);
+        });
     } else {
         Pimeier.Toast.show("新闻详情暂不可用");
     }

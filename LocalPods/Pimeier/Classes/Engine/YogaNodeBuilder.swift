@@ -7,6 +7,7 @@
 
 import UIKit
 import YogaKit
+import WebKit
 
 // 定义一个全局的 measure 函数
 func measureLabel(node: YGNodeRef?, width: Float, widthMode: YGMeasureMode, height: Float, heightMode: YGMeasureMode) -> YGSize {
@@ -250,6 +251,16 @@ public class YogaNodeBuilder {
                 
                 childView.frame = CGRect(x: left, y: top, width: width, height: height)
                 
+                // 特殊处理 WebView，确保 frame 正确设置
+                if let webView = childView as? WKWebView {
+                    print("📐 [WebView] 设置 frame: x=\(left), y=\(top), width=\(width), height=\(height)")
+                    // 确保 WebView 的 bounds 正确
+                    if webView.bounds.width != width || webView.bounds.height != height {
+                        webView.frame = CGRect(x: left, y: top, width: width, height: height)
+                        print("✅ [WebView] Frame 已更新")
+                    }
+                }
+                
                 // 递归处理孙子视图
                 applyLayoutToChildren(of: childView, node: childNode)
             }
@@ -319,6 +330,64 @@ public class YogaNodeBuilder {
         case .slider:
             let slider = UISlider()
             view = slider
+            
+        case .webview:
+            // 配置 WKWebView 以减少警告
+            let configuration = WKWebViewConfiguration()
+            configuration.allowsInlineMediaPlayback = true
+            configuration.mediaTypesRequiringUserActionForPlayback = []
+            
+            // 设置偏好设置以减少警告
+            let preferences = WKPreferences()
+            preferences.javaScriptEnabled = true
+            // 禁用一些可能导致警告的功能（可选）
+            if #available(iOS 14.0, *) {
+                preferences.isFraudulentWebsiteWarningEnabled = false
+            }
+            configuration.preferences = preferences
+            
+            // 设置进程池（可选，用于共享配置）
+            if configuration.processPool == nil {
+                configuration.processPool = WKProcessPool()
+            }
+            
+            let webView = WKWebView(frame: .zero, configuration: configuration)
+            
+            // 创建并设置导航代理，用于错误处理
+            let navigationDelegate = WebViewNavigationDelegate()
+            webView.navigationDelegate = navigationDelegate
+            
+            // 设置错误处理回调
+            navigationDelegate.onLoadError = { [weak webView] webView, error in
+                // 可以在这里显示错误提示或加载错误页面
+                print("⚠️ [WebView] 加载错误: \(error.localizedDescription)")
+            }
+            
+            navigationDelegate.onLoadFinish = { [weak webView] webView, error in
+                if let error = error {
+                    print("⚠️ [WebView] 加载完成（有错误）: \(error.localizedDescription)")
+                } else {
+                    print("✅ [WebView] 加载完成（成功）")
+                }
+            }
+            
+            // 保存代理引用，防止被释放
+            objc_setAssociatedObject(webView, &WebViewDelegateKey, navigationDelegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+            
+            // 设置背景色，避免加载时显示白色
+            webView.backgroundColor = .systemBackground
+            webView.isOpaque = false
+            
+            // 确保 WebView 可以正确显示内容
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
+            webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
+            webView.scrollView.contentInset = .zero
+            webView.scrollView.scrollIndicatorInsets = .zero
+            
+            // 确保 WebView 可以接收触摸事件
+            webView.isUserInteractionEnabled = true
+            
+            view = webView
             
         case .scrollView:
             let scrollView = UIScrollView()
@@ -647,6 +716,30 @@ public class YogaNodeBuilder {
             }
         }
         
+        // WebView 样式
+        if let webView = view as? WKWebView {
+            if let urlString = style.url, !urlString.isEmpty, urlString != "undefined" {
+                // 检查 URL 是否改变，避免重复加载
+                let currentURL = webView.url?.absoluteString ?? ""
+                if currentURL != urlString {
+                    print("🔄 [WebView] URL 更新: \(currentURL) -> \(urlString)")
+                    loadWebViewURL(urlString, into: webView)
+                } else {
+                    print("⏭️ [WebView] URL 未改变，跳过加载: \(urlString)")
+                }
+            }
+            if let allowsBackForward = style.allowsBackForwardNavigationGestures {
+                webView.allowsBackForwardNavigationGestures = allowsBackForward
+            }
+            if let allowsLinkPreview = style.allowsLinkPreview {
+                webView.allowsLinkPreview = allowsLinkPreview
+            }
+            
+            // 确保 WebView 可以正确显示内容
+            webView.scrollView.contentInsetAdjustmentBehavior = .never
+            webView.scrollView.automaticallyAdjustsScrollIndicatorInsets = false
+        }
+        
         // 保存数据 ID
         if let dataId = style.dataId {
             view.accessibilityIdentifier = dataId
@@ -715,6 +808,39 @@ public class YogaNodeBuilder {
     }
 }
 
+// MARK: - WebView Loading
+
+/// 加载 WebView URL
+/// - Parameters:
+///   - urlString: URL 字符串
+///   - webView: 目标 WKWebView
+private func loadWebViewURL(_ urlString: String, into webView: WKWebView) {
+    // 判断是网络 URL 还是本地 HTML
+    if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
+        // 网络 URL
+        if let url = URL(string: urlString) {
+            let request = URLRequest(url: url)
+            webView.load(request)
+            print("✅ [WebView] 加载网络 URL: \(urlString)")
+        } else {
+            print("⚠️ [WebView] 无效的 URL: \(urlString)")
+        }
+    } else if urlString.hasPrefix("file://") {
+        // 本地文件
+        if let url = URL(string: urlString) {
+            webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+            print("✅ [WebView] 加载本地文件: \(urlString)")
+        } else {
+            print("⚠️ [WebView] 无效的文件路径: \(urlString)")
+        }
+    } else {
+        // 尝试作为本地 HTML 字符串加载
+        webView.loadHTMLString(urlString, baseURL: nil)
+        print("✅ [WebView] 加载 HTML 字符串")
+    }
+}
+
 // MARK: - Associated Object Keys
 
 private var ImageTaskKey: UInt8 = 0
+private var WebViewDelegateKey: UInt8 = 0

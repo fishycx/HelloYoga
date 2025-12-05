@@ -432,7 +432,8 @@ public class PimeierListView: UICollectionView, PimeierComponent, UICollectionVi
         }
         
         // Interactions
-        if let click = attributes["onItemClick"] {
+        // 检查多种可能的属性名（XML 解析器可能会转为小写）
+        if let click = attributes["onItemClick"] ?? attributes["onitemclick"] {
             self.onItemClickScript = click
         }
         

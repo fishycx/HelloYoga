@@ -96,7 +96,8 @@
         backgroundColor="#F5F5F5"
         padding="10"
         paddingTop="10"
-        paddingBottom="10">
+        paddingBottom="10"
+        onItemClick="openNewsDetail(item.id)">
         
         <!-- 模板 1: 标准新闻卡片 (带图片) -->
         <template type="news">
@@ -107,8 +108,7 @@
                 cornerRadius="12"
                 flexDirection="row"
                 padding="12"
-                marginBottom="10"
-                onClick="openNewsDetail(item.id)">
+                marginBottom="10">
                 <!-- 左侧内容 -->
                 <view flexGrow="1" flexDirection="column" justifyContent="spaceBetween" marginRight="10">
                     <text 
@@ -163,8 +163,7 @@
                 cornerRadius="12"
                 flexDirection="column"
                 padding="15"
-                marginBottom="10"
-                onClick="openNewsDetail(item.id)">
+                marginBottom="10">
                 <text 
                     text="{{ item.title }}" 
                     fontSize="16" 

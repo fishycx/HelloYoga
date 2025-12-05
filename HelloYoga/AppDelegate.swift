@@ -19,6 +19,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         BridgeManager.shared.register(DeviceModule.self)
         BridgeManager.shared.register(SystemModule.self)
         BridgeManager.shared.register(NetworkModule.self)
+        BridgeManager.shared.register(NavigationModule.self)
         
         // 注册自定义 UI 组件
         ComponentRegistry.shared.register(CircleView.self, forTagName: "circle")

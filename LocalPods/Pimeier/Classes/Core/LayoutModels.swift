@@ -40,6 +40,7 @@ public struct LayoutNode {
         // 新增 UI 组件
         case switch_ // Switch 开关（使用 switch_ 避免与 Swift 关键字冲突）
         case slider // Slider 滑块
+        case webview // WebView 容器（用于加载 H5 页面）
         
         // 已废弃的类型，保留枚举 case 但不处理，或者直接移除
         case refreshView
@@ -322,6 +323,11 @@ public struct ViewStyle {
     public var maximumTrackTintColor: UIColor?
     public var thumbTintColorSlider: UIColor? // 为 Slider 单独命名，避免与 Switch 冲突
     
+    // WebView 属性
+    public var url: String?
+    public var allowsBackForwardNavigationGestures: Bool?
+    public var allowsLinkPreview: Bool?
+    
     // 数据绑定 ID
     public var dataId: String?
     
@@ -403,6 +409,14 @@ public struct ViewStyle {
                 style.maximumTrackTintColor = parseColor(value)
             case "thumbtintcolorslider":
                 style.thumbTintColorSlider = parseColor(value)
+                
+            // WebView 属性
+            case "url":
+                style.url = value
+            case "allowsbackforwardnavigationgestures":
+                style.allowsBackForwardNavigationGestures = parseBool(value)
+            case "allowslinkpreview":
+                style.allowsLinkPreview = parseBool(value)
                 
             // 数据绑定
             case "id", "dataid":

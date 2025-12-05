@@ -123,10 +123,32 @@ public class PimeierRenderer {
         
         // 1. 处理 if 指令
         if let condition = node.ifCondition {
-            let result = evaluateExpression(condition, context: context)
+            // 如果条件包含表达式 {{ }}，需要先解析
+            var resolvedCondition = condition
+            if condition.contains("{{") && condition.contains("}}") {
+                resolvedCondition = resolveString(condition, context: context)
+                print("🔍 [Renderer] if 条件解析: '\(condition)' -> '\(resolvedCondition)'")
+            }
+            
+            // 评估条件表达式
+            // 如果解析后的值是 "true"/"false" 字符串，直接转换
+            let result: JSValue?
+            if resolvedCondition.lowercased() == "true" {
+                result = context?.context.evaluateScript("true")
+            } else if resolvedCondition.lowercased() == "false" {
+                result = context?.context.evaluateScript("false")
+            } else {
+                // 这是一个表达式，需要评估
+                result = evaluateExpression(resolvedCondition, context: context)
+            }
+            
             // 如果结果为 false/undefined/null/0，则不渲染
-            if result?.toBool() == false {
+            let shouldRender = result?.toBool() ?? false
+            if !shouldRender {
+                print("🚫 [Renderer] if 条件为 false，跳过渲染: '\(condition)' (解析后: '\(resolvedCondition)')")
                 return []
+            } else {
+                print("✅ [Renderer] if 条件为 true，继续渲染: '\(condition)' (解析后: '\(resolvedCondition)')")
             }
         }
         

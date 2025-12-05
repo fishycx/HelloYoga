@@ -46,6 +46,52 @@ public class PimeierJSEngine {
         }
         context.setObject(consoleLog, forKeyedSubscript: "log" as NSCopying & NSObjectProtocol)
         
+        // 1.1 注入 setTimeout 和 setInterval（JavaScriptCore 默认不提供）
+        let setTimeoutScript = """
+        (function() {
+            var setTimeout = function(callback, delay) {
+                var timer = Timer.scheduledTimer(withTimeInterval: delay / 1000.0, repeats: false) { _ in
+                    callback();
+                };
+                return timer;
+            };
+            var setInterval = function(callback, delay) {
+                var timer = Timer.scheduledTimer(withTimeInterval: delay / 1000.0, repeats: true) { _ in
+                    callback();
+                };
+                return timer;
+            };
+            var clearTimeout = function(timer) {
+                if (timer) { timer.invalidate(); }
+            };
+            var clearInterval = function(timer) {
+                if (timer) { timer.invalidate(); }
+            };
+            return { setTimeout: setTimeout, setInterval: setInterval, clearTimeout: clearTimeout, clearInterval: clearInterval };
+        })();
+        """
+        
+        // 使用更简单的方式：直接注入全局函数
+        let setTimeoutFunc: @convention(block) (JSValue, Double) -> Timer = { callback, delay in
+            return Timer.scheduledTimer(withTimeInterval: delay / 1000.0, repeats: false) { _ in
+                callback.call(withArguments: [])
+            }
+        }
+        context.setObject(setTimeoutFunc, forKeyedSubscript: "setTimeout" as NSCopying & NSObjectProtocol)
+        
+        let setIntervalFunc: @convention(block) (JSValue, Double) -> Timer = { callback, delay in
+            return Timer.scheduledTimer(withTimeInterval: delay / 1000.0, repeats: true) { _ in
+                callback.call(withArguments: [])
+            }
+        }
+        context.setObject(setIntervalFunc, forKeyedSubscript: "setInterval" as NSCopying & NSObjectProtocol)
+        
+        let clearTimeoutFunc: @convention(block) (Timer?) -> Void = { timer in
+            timer?.invalidate()
+        }
+        context.setObject(clearTimeoutFunc, forKeyedSubscript: "clearTimeout" as NSCopying & NSObjectProtocol)
+        context.setObject(clearTimeoutFunc, forKeyedSubscript: "clearInterval" as NSCopying & NSObjectProtocol)
+        
         // 2. 注入 Alert 功能
         let alert: @convention(block) (String) -> Void = { message in
             DispatchQueue.main.async {
@@ -140,6 +186,13 @@ public class PimeierJSEngine {
                 delete: function(params) { return Pimeier.invoke('Network', 'delete', params); },
                 upload: function(params) { return Pimeier.invoke('Network', 'upload', params); },
                 download: function(params) { return Pimeier.invoke('Network', 'download', params); }
+            },
+            
+            // Navigation 模块
+            Navigation: {
+                pushPage: function(params) { return Pimeier.invoke('Navigation', 'pushPage', params); },
+                popPage: function() { return Pimeier.invoke('Navigation', 'popPage', {}); },
+                openPage: function(params) { return Pimeier.invoke('Navigation', 'openPage', params); }
             }
         };
         log("🚀 [JS SDK] Pimeier Native Bridge Ready");

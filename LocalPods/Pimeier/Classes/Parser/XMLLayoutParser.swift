@@ -88,6 +88,8 @@ public class XMLLayoutParser: NSObject {
             return "switch_"
         } else if lowercased == "slider" {
             return "slider"
+        } else if lowercased == "webview" || lowercased == "web-view" {
+            return "webview"
         }
         
         // 其他情况使用全小写

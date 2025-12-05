@@ -126,7 +126,7 @@ open class PimeierViewController: UIViewController {
         print("📂 [Node 7] JSON 路径: \(jsonSource) - \(dataURL.lastPathComponent)")
         print("📂 [Node 7] JSON 完整路径: \(dataURL.path)")
         
-        // 尝试加载 logic.js
+        // 尝试加载 logic.js（在注入 viewModel 之前加载，这样 init 函数可以访问 viewModel）
         if let jsURL = TemplateManager.shared.getTemplateURL(templateId: templateID, fileName: logicFileName),
            let jsScript = try? String(contentsOf: jsURL) {
             print("📜 [PimeierVC] 加载逻辑脚本: \(logicFileName)")
@@ -161,16 +161,33 @@ open class PimeierViewController: UIViewController {
         }
         
         if let jsonData = try? Data(contentsOf: dataURL),
-           let jsonObject = try? JSONSerialization.jsonObject(with: jsonData, options: []) {
+           let jsonObjectAny = try? JSONSerialization.jsonObject(with: jsonData, options: []),
+           var jsonObject = jsonObjectAny as? [String: Any] {
+            
+            // 检查是否有传递的参数（从 NavigationModule 传递）
+            let paramsKey = "PimeierPageParams_\(templateID)"
+            if let paramsString = UserDefaults.standard.string(forKey: paramsKey),
+               let paramsData = paramsString.data(using: .utf8),
+               let params = try? JSONSerialization.jsonObject(with: paramsData, options: []) as? [String: Any] {
+                print("📦 [PimeierVC] 检测到传递的参数，合并到 viewModel")
+                print("📦 [PimeierVC] 参数 keys: \(params.keys.sorted())")
+                // 将参数合并到 jsonObject 中
+                for (key, value) in params {
+                    jsonObject[key] = value
+                    print("📦 [PimeierVC] 合并参数: \(key) = \(value)")
+                }
+                // 清理参数（避免下次进入时重复使用）
+                UserDefaults.standard.removeObject(forKey: paramsKey)
+            } else {
+                print("📦 [PimeierVC] 未检测到传递的参数 (key: \(paramsKey))")
+            }
             
             // 打印读取到的 JSON 对象 keys
-            if let dict = jsonObject as? [String: Any] {
-                print("📦 [Node 9] 读取到的 JSON keys: \(dict.keys.sorted())")
-                if let todoList = dict["todoList"] {
-                    print("✅ [Node 9] JSON 中包含 todoList: \(todoList)")
-                } else {
-                    print("❌ [Node 9] JSON 中不包含 todoList!")
-                }
+            print("📦 [Node 9] 读取到的 JSON keys: \(jsonObject.keys.sorted())")
+            if let todoList = jsonObject["todoList"] {
+                print("✅ [Node 9] JSON 中包含 todoList: \(todoList)")
+            } else {
+                print("❌ [Node 9] JSON 中不包含 todoList!")
             }
             
             // 先清理旧的 viewModel，确保完全替换
@@ -252,6 +269,26 @@ open class PimeierViewController: UIViewController {
         // 6. 初始布局计算
         view.setNeedsLayout()
         view.layoutIfNeeded()
+        
+        // 7. 触发 JS 初始化（如果 logic.js 中有自动初始化代码）
+        // 通过执行一个简单的表达式来触发，确保 viewModel 已经注入
+        // 延迟执行，确保所有视图都已经渲染完成
+        DispatchQueue.main.async {
+            self.jsEngine?.evaluate("""
+                (function() {
+                    if (typeof init === 'function') {
+                        try {
+                            log('触发 init() 函数');
+                            init();
+                        } catch(e) {
+                            log('Init error: ' + e);
+                        }
+                    } else {
+                        log('init 函数未定义');
+                    }
+                })();
+            """)
+        }
         
         print("✅ [PimeierVC] 模版加载完成")
     }
